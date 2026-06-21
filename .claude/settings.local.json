@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp /tmp/check-lines.mjs /workspaces/rejs/check-lines.mjs)",
+      "Bash(node check-lines.mjs)",
+      "Bash(npx playwright *)",
+      "Bash(cp /tmp/check-lines.mjs /workspaces/rejs/check-lines.mjs *)",
+      "Bash(curl -s -m 10 -A \"rejs-test\" \"https://nominatim.openstreetmap.org/search?format=json&q=Berlin&limit=1\")",
+      "Bash(echo \"EXIT: $?\")"
+    ],
+    "additionalDirectories": ["/tmp"]
+  }
+}

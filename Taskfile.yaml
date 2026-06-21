@@ -1,0 +1,113 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  IMAGE: ghcr.io/lillevang/rejs
+  TAG_FILE: .version
+  TAG:
+    sh: cat .version
+  RUNTIME:
+    sh: command -v podman >/dev/null 2>&1 && echo podman || echo docker
+
+tasks:
+  bump:
+    desc: Bump version (patch, minor, major)
+    vars:
+      TARGET: '{{.TARGET | default "patch"}}'
+    cmds:
+      - |
+        CURRENT=$(cat {{.TAG_FILE}})
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+        case "{{.TARGET}}" in
+         patch) PATCH=$((PATCH+1));;
+         minor) MINOR=$((MINOR+1)); PATCH=0;;
+         major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0;;
+         *) echo "Unknown bump target: {{.TARGET}}" && exit 1;;
+        esac
+        NEW="$MAJOR.$MINOR.$PATCH"
+        echo "$NEW" > {{.TAG_FILE}}
+        echo "🔼 Bumped version: $CURRENT → $NEW"
+
+  build:
+    desc: Build the rejs container image
+    cmds:
+      - "{{.RUNTIME}} build --build-arg SITE_VERSION={{.TAG}} -t {{.IMAGE}}:{{.TAG}} ."
+
+  healthcheck:
+    desc: Run local container and check /healthz endpoint
+    cmds:
+      - |
+        echo "🚀 Starting container {{.IMAGE}}:{{.TAG}}"
+        NETWORK_OPT=$([ "{{.RUNTIME}}" = "podman" ] && echo "--network=slirp4netns" || echo "")
+        CID=$({{.RUNTIME}} run -d $NETWORK_OPT -p 8081:8080 {{.IMAGE}}:{{.TAG}})
+        echo "⌛ Waiting for /healthz"
+        sleep 5
+        if [ "$(curl --max-time 5 -fs http://localhost:8081/healthz)" = "ok" ]; then
+          echo "✅ Health check passed"
+        else
+          echo "❌ Health check failed"
+          {{.RUNTIME}} logs "$CID"
+          {{.RUNTIME}} stop "$CID" && {{.RUNTIME}} rm "$CID"
+          exit 1
+        fi
+        {{.RUNTIME}} stop "$CID" && {{.RUNTIME}} rm "$CID"
+
+  verify:
+    desc: Build and verify health
+    cmds:
+      - task: build
+      - task: healthcheck
+
+  push:
+    desc: Push the image to GHCR
+    cmds:
+      - |
+        echo "📦 Pushing image {{.IMAGE}}:{{.TAG}}"
+        {{.RUNTIME}} push {{.IMAGE}}:{{.TAG}}
+
+  resolve-digest:
+    internal: true
+    cmds:
+      - |
+        crane digest {{.IMAGE}}:{{.TAG}} > .digest
+
+  sign:
+    desc: Sign the image with cosign
+    dotenv: [".cosign.env"]
+    cmds:
+      - task: resolve-digest
+      - |
+        DIGEST=$(cat .digest)
+        echo "🔏 Signing image {{.IMAGE}}@$DIGEST"
+        cosign sign --yes --key ~/.config/cosign/cosign.key {{.IMAGE}}@$DIGEST
+
+  trivy:
+    desc: Generate SBOM and vulnerability report with Trivy
+    cmds:
+      - mkdir -p ./security
+      - echo "🔍 Generating SBOM with Trivy"
+      - trivy image --format cyclonedx --output ./security/sbom-{{.TAG}}.json {{.IMAGE}}:{{.TAG}}
+      - echo "🛡 Generating vulnerability scan report"
+      - trivy image --format json --scanners vuln --output ./security/vulns-{{.TAG}}.json {{.IMAGE}}:{{.TAG}}
+
+  commit-artifacts:
+    desc: Commit .version, digest, SBOM and vuln reports to Git
+    cmds:
+      - |
+        echo "📦 Committing version + security artifacts"
+        git add .version .digest security/sbom-{{.TAG}}.json security/vulns-{{.TAG}}.json
+        git commit -m "chore: release {{.TAG}}"
+        git push
+
+  release:
+    desc: Full release pipeline (build, push, scan, commit). Run 'task sign' separately if cosign is available.
+    cmds:
+      - task: verify
+      - task: push
+      - task: resolve-digest
+      - task: trivy
+      - task: commit-artifacts
+      - echo ""
+      - echo "✅ Released {{.IMAGE}}:{{.TAG}}"
+      - echo "   Bump the image tag in the infra repo (apps/rejs/deploy.yaml) to deploy via ArgoCD."

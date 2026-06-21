@@ -1,0 +1,2 @@
+- [App Overview](app-overview.md) — what rejs is, its core UX surfaces, and how the journey-planner flow works
+- [Friction Patterns](friction-patterns.md) — recurring UX friction observed in rejs and what's already been flagged in IDEAS.md

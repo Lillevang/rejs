@@ -1,0 +1,36 @@
+{
+  "name": "rejs-agent",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/rejs",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/rejs,type=bind,consistency=cached",
+
+  "mounts": [
+    // Mount sibling repos as peers of the workspace so the agent can `cd ../<other-repo>`
+    // and read them for context. `,readonly` keeps them visible but un-editable.
+    //
+    // Replace the source path with the absolute path to the repo on your host, and
+    // rename `other-repo` in the target to match (it appears at /workspaces/other-repo).
+    "source=/home/jls/repos/personal/infra,target=/workspaces/infra,type=bind,readonly"
+  ],
+
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+    "GH_TOKEN": "${localEnv:GH_TOKEN}"
+  },
+
+  "postCreateCommand": "/usr/local/bin/post-create.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "esbenp.prettier-vscode",
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}
