@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Plan, visualize, and compare longer journeys from a small DSL.",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
