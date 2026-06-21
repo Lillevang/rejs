@@ -952,6 +952,10 @@ body {
   overflow: hidden;
 }
 
+.app__mobile-view {
+  position: relative;
+}
+
 .app__mobile-map {
   flex: 1;
   min-height: 0;
@@ -959,6 +963,18 @@ body {
   flex-direction: column;
   padding: 8px;
   gap: 6px;
+}
+
+/* The map is kept mounted across tab switches so Leaflet retains the user's
+   pan/zoom. When off-tab it's pulled out of flow at full size (absolute, inset:0
+   in the relatively-positioned view) and hidden — full size, not 0×0, so Leaflet
+   never sees a zero-dimension container that would need an invalidateSize() on
+   return. */
+.app__mobile-map.app__mobile-hidden {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .app__mobile-plan {

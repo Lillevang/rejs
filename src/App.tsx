@@ -366,12 +366,15 @@ export default function App() {
         />
 
         <main className="app__mobile-view">
-          {mobileTab === "map" && (
-            <div className="app__mobile-map">
-              {mapView}
-              {geostatus}
-            </div>
-          )}
+          {/* The map stays mounted and is hidden (full size, out of flow) when
+              off-tab, so Leaflet keeps the user's pan/zoom across tab switches —
+              the common round-trip for the map-first job. The Plan and Edit
+              panels derive purely from the DSL, so unmounting them loses no
+              view state. */}
+          <div className={`app__mobile-map${mobileTab === "map" ? "" : " app__mobile-hidden"}`}>
+            {mapView}
+            {geostatus}
+          </div>
           {mobileTab === "plan" && (
             <div className="app__mobile-plan">
               <Summary trip={resolved} />

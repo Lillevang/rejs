@@ -16,7 +16,10 @@ function useDismissable(ref: RefObject<HTMLElement>, open: boolean, close: () =>
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [ref, open, close]);
+    // `close` is only invoked, and the state setters behind it are stable, so we
+    // intentionally omit it to avoid re-attaching listeners on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref, open]);
 }
 
 interface ToolbarProps {
@@ -127,7 +130,12 @@ export function Toolbar({
           <span className="toolbar__logo">rejs</span>
         </div>
 
-        <button className="btn" onClick={handleSave}>
+        <button
+          className="btn"
+          // Compact mode has no inline name field to focus, so a never-saved
+          // buffer falls back to the name prompt instead of being a dead button.
+          onClick={() => (loadedName == null ? handleSaveAsPrompt() : onSave())}
+        >
           Save{dirty && <span className="toolbar__dirty-dot" aria-label="unsaved changes" />}
         </button>
 

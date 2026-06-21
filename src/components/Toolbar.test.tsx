@@ -155,4 +155,19 @@ describe("Toolbar compact (mobile) mode", () => {
     setup({ compact: true, loadedName: "Trip", dirty: true });
     expect(screen.getByLabelText("unsaved changes")).toBeInTheDocument();
   });
+
+  it("Save prompts for a name on a never-saved buffer (no inline field to focus)", () => {
+    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("First Trip");
+    const props = setup({ compact: true, loadedName: null });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(props.onSaveAs).toHaveBeenCalledWith("First Trip");
+    promptSpy.mockRestore();
+  });
+
+  it("Save overwrites in place when a plan is already loaded", () => {
+    const props = setup({ compact: true, loadedName: "Trip" });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(props.onSave).toHaveBeenCalledTimes(1);
+    expect(props.onSaveAs).not.toHaveBeenCalled();
+  });
 });
