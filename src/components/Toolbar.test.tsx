@@ -120,3 +120,39 @@ describe("Toolbar export menu", () => {
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 });
+
+describe("Toolbar compact (mobile) mode", () => {
+  it("keeps Save inline but tucks infrequent actions behind an overflow menu", () => {
+    setup({ compact: true });
+    // Save stays inline; the always-present Save as… text field is gone.
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Plan name")).not.toBeInTheDocument();
+    // Infrequent actions are hidden until the overflow menu is opened.
+    expect(screen.queryByRole("menuitem", { name: "DSL guide" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    expect(screen.getByRole("menuitem", { name: "DSL guide" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Load example" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /Copy share link/ })).toBeInTheDocument();
+  });
+
+  it("prompts for a name from the overflow Save as… item", () => {
+    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("Promised Trip");
+    const props = setup({ compact: true });
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Save as…" }));
+    expect(props.onSaveAs).toHaveBeenCalledWith("Promised Trip");
+    promptSpy.mockRestore();
+  });
+
+  it("loads a saved plan from the overflow menu", () => {
+    const props = setup({ compact: true, plans: ["My Trip"] });
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "My Trip" }));
+    expect(props.onLoad).toHaveBeenCalledWith("My Trip");
+  });
+
+  it("shows a dirty dot on Save when the buffer diverges", () => {
+    setup({ compact: true, loadedName: "Trip", dirty: true });
+    expect(screen.getByLabelText("unsaved changes")).toBeInTheDocument();
+  });
+});

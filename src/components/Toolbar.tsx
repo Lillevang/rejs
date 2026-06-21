@@ -1,4 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
+
+/** Close a popup when it's open and the user clicks outside it or presses Escape. */
+function useDismissable(ref: RefObject<HTMLElement>, open: boolean, close: () => void) {
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") close();
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [ref, open, close]);
+}
 
 interface ToolbarProps {
   plans: string[];
@@ -6,6 +25,12 @@ interface ToolbarProps {
   loadedName: string | null;
   /** Whether the buffer diverges from its saved slot. */
   dirty: boolean;
+  /**
+   * Mobile layout: collapse the infrequent actions (Save as…, Saved plans,
+   * Copy link, Export, DSL guide, Load example) into a single overflow menu,
+   * leaving only Save inline. Reclaims scarce vertical space on a phone.
+   */
+  compact?: boolean;
   /** Overwrite the currently-loaded slot in place. No-op if nothing is loaded. */
   onSave: () => void;
   /** Save the buffer under a (possibly new) name. */
@@ -26,6 +51,7 @@ export function Toolbar({
   plans,
   loadedName,
   dirty,
+  compact = false,
   onSave,
   onSaveAs,
   onLoad,
@@ -40,28 +66,16 @@ export function Toolbar({
   const [selected, setSelected] = useState("");
   const [copied, setCopied] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [overflowOpen, setOverflowOpen] = useState(false);
   const nameInput = useRef<HTMLInputElement>(null);
   const exportMenu = useRef<HTMLDivElement>(null);
+  const overflowMenu = useRef<HTMLDivElement>(null);
 
-  // Close the Export menu on an outside click or Escape — the smallest
-  // accessible dropdown behavior, no extra dependency.
-  useEffect(() => {
-    if (!exportOpen) return;
-    function onPointerDown(e: MouseEvent) {
-      if (exportMenu.current && !exportMenu.current.contains(e.target as Node)) {
-        setExportOpen(false);
-      }
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setExportOpen(false);
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [exportOpen]);
+  // Close a menu on an outside click or Escape — the smallest accessible
+  // dropdown behavior, no extra dependency. Shared by the Export and (mobile)
+  // overflow menus.
+  useDismissable(exportMenu, exportOpen, () => setExportOpen(false));
+  useDismissable(overflowMenu, overflowOpen, () => setOverflowOpen(false));
 
   async function copyShareLink() {
     const url = shareUrl();
@@ -92,6 +106,129 @@ export function Toolbar({
     onSaveAs(trimmed);
     setSelected(trimmed);
     setName("");
+  }
+
+  // Mobile "Save as…": no always-present text field (a poor phone affordance),
+  // so prompt for the name on demand. window.prompt is the smallest no-dependency
+  // input; the desktop path keeps its inline field.
+  function handleSaveAsPrompt() {
+    setOverflowOpen(false);
+    const entered = window.prompt("Save plan as…", loadedName ?? "")?.trim();
+    if (entered) {
+      onSaveAs(entered);
+      setSelected(entered);
+    }
+  }
+
+  if (compact) {
+    return (
+      <div className="toolbar toolbar--compact">
+        <div className="toolbar__brand">
+          <span className="toolbar__logo">rejs</span>
+        </div>
+
+        <button className="btn" onClick={handleSave}>
+          Save{dirty && <span className="toolbar__dirty-dot" aria-label="unsaved changes" />}
+        </button>
+
+        <div className="toolbar__export" ref={overflowMenu}>
+          <button
+            className="btn btn--ghost"
+            aria-haspopup="menu"
+            aria-expanded={overflowOpen}
+            aria-label="More actions"
+            onClick={() => setOverflowOpen((open) => !open)}
+          >
+            ⋯
+          </button>
+          {overflowOpen && (
+            <div className="toolbar__menu" role="menu" aria-label="More actions">
+              <button className="toolbar__menu-item" role="menuitem" onClick={handleSaveAsPrompt}>
+                Save as…
+              </button>
+              {plans.length > 0 && (
+                <>
+                  <div className="toolbar__menu-label">Saved plans</div>
+                  {plans.map((p) => (
+                    <div key={p} className="toolbar__menu-plan">
+                      <button
+                        className="toolbar__menu-item toolbar__menu-plan-load"
+                        role="menuitem"
+                        onClick={() => {
+                          setOverflowOpen(false);
+                          onLoad(p);
+                        }}
+                      >
+                        {p}
+                      </button>
+                      <button
+                        className="toolbar__menu-plan-delete"
+                        aria-label={`Delete ${p}`}
+                        onClick={() => onDelete(p)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+              <div className="toolbar__menu-sep" role="separator" />
+              <button
+                className="toolbar__menu-item"
+                role="menuitem"
+                onClick={() => {
+                  setOverflowOpen(false);
+                  copyShareLink();
+                }}
+              >
+                {copied ? "Link copied!" : "Copy share link"}
+              </button>
+              <button
+                className="toolbar__menu-item"
+                role="menuitem"
+                onClick={() => {
+                  setOverflowOpen(false);
+                  onPrint();
+                }}
+              >
+                Print / Save as PDF
+              </button>
+              <button
+                className="toolbar__menu-item"
+                role="menuitem"
+                onClick={() => {
+                  setOverflowOpen(false);
+                  onDownloadIcs();
+                }}
+              >
+                Download .ics
+              </button>
+              <div className="toolbar__menu-sep" role="separator" />
+              <button
+                className="toolbar__menu-item"
+                role="menuitem"
+                onClick={() => {
+                  setOverflowOpen(false);
+                  onShowHelp();
+                }}
+              >
+                DSL guide
+              </button>
+              <button
+                className="toolbar__menu-item"
+                role="menuitem"
+                onClick={() => {
+                  setOverflowOpen(false);
+                  onLoadExample();
+                }}
+              >
+                Load example
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
