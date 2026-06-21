@@ -6,6 +6,7 @@ import { MapView } from "./components/MapView";
 import { Timeline } from "./components/Timeline";
 import { Summary } from "./components/Summary";
 import { HelpModal } from "./components/HelpModal";
+import { FirstRunHint } from "./components/FirstRunHint";
 import { useResizableHeight } from "./state/use-resizable-height";
 import {
   activityQuery,
@@ -24,6 +25,8 @@ import { isAmbiguous } from "./geocode/ambiguity";
 import { colorForIndex } from "./lib/colors";
 import { EXAMPLE_DSL } from "./lib/example";
 import { buildShareUrl, decodePlanHash } from "./lib/share";
+import { icsFilename, planToIcs } from "./lib/export/ics";
+import { downloadTextFile } from "./lib/export/download";
 import {
   deletePlan,
   dismissFirstRunHint,
@@ -51,6 +54,10 @@ export default function App() {
   const [focusLine, setFocusLine] = useState<number | null>(null);
   const [focusRange, setFocusRange] = useState<[number, number] | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  // The first-run hint shows only on a genuine first visit: no named save slots
+  // yet AND the user hasn't dismissed it before. Both reads happen once on mount;
+  // dismissal persists to localStorage so it never reappears.
+  const [hintDismissed, setHintDismissed] = useState(() => isFirstRunHintDismissed());
   const { height: timelineHeight, handleProps } = useResizableHeight("rejs.timelineHeight", 220);
 
   // Parse + resolve on every edit. Both are pure and cheap, so no debounce needed.
@@ -60,8 +67,7 @@ export default function App() {
   // between dated hops) onto the parse diagnostics, sorted by line so the list
   // reads top-to-bottom regardless of which pass produced each entry.
   const diagnostics = useMemo(
-    () =>
-      [...parseDiagnostics, ...dateDiagnostics(trip, resolved)].sort((a, b) => a.line - b.line),
+    () => [...parseDiagnostics, ...dateDiagnostics(trip, resolved)].sort((a, b) => a.line - b.line),
     [parseDiagnostics, trip, resolved],
   );
 
@@ -197,6 +203,14 @@ export default function App() {
   // never flagged. Cheap string compare on every render; the DSL is small.
   const dirty = loadedName != null && loadPlan(loadedName) !== dsl;
 
+  // Show the nudge only for a true newcomer: no saved plans and not yet
+  // dismissed. Returning users (who have saved at least one plan) never see it.
+  const showHint = !hintDismissed && plans.length === 0;
+  const dismissHint = () => {
+    dismissFirstRunHint();
+    setHintDismissed(true);
+  };
+
   const waypoints = [displayStart, displayEnd].filter((w): w is DisplayWaypoint => w !== null);
   const activityStates = displayHops.flatMap((h) => h.activities.map((a) => a.locationState));
   const driveStops = displayHops.flatMap((h) => h.driveStops);
@@ -247,11 +261,18 @@ export default function App() {
           setLoadedName(null);
         }}
         onShowHelp={() => setHelpOpen(true)}
+        onPrint={() => window.print()}
+        onDownloadIcs={() =>
+          downloadTextFile(icsFilename(resolved.title), planToIcs(resolved), "text/calendar")
+        }
         shareUrl={() => buildShareUrl(dsl)}
       />
 
       <div className="app__body">
         <aside className="app__sidebar">
+          {showHint && (
+            <FirstRunHint onShowHelp={() => setHelpOpen(true)} onDismiss={dismissHint} />
+          )}
           <Editor
             value={dsl}
             diagnostics={diagnostics}

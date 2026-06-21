@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { deletePlan, listPlans, loadPlan, planExists, savePlan } from "./store";
+import {
+  deletePlan,
+  dismissFirstRunHint,
+  isFirstRunHintDismissed,
+  listPlans,
+  loadPlan,
+  planExists,
+  savePlan,
+} from "./store";
 
 afterEach(() => {
   localStorage.clear();
@@ -46,5 +54,16 @@ describe("named plan storage", () => {
     deletePlan("Trip");
     expect(planExists("Trip")).toBe(false);
     expect(loadPlan("Trip")).toBeNull();
+  });
+});
+
+describe("first-run hint dismissal", () => {
+  it("defaults to not dismissed", () => {
+    expect(isFirstRunHintDismissed()).toBe(false);
+  });
+
+  it("persists dismissal", () => {
+    dismissFirstRunHint();
+    expect(isFirstRunHintDismissed()).toBe(true);
   });
 });

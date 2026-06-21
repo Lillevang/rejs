@@ -204,6 +204,78 @@ test("picking a disambiguation candidate writes that hop's coords", async ({ pag
   await expect(page.locator(".app__disambig")).toHaveCount(0);
 });
 
+test("exports the plan as an .ics download from the Export menu", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Journey DSL").fill(TWO_HOP);
+
+  await page.getByRole("button", { name: /Export/ }).click();
+
+  // The browser fires a download; capture it and read the .ics back.
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("menuitem", { name: "Download .ics" }).click();
+  const download = await downloadPromise;
+
+  // Filename is derived (sanitized) from the trip title.
+  expect(download.suggestedFilename()).toBe("Test-Trip.ics");
+
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(chunk as Buffer);
+  const ics = Buffer.concat(chunks).toString("utf-8");
+
+  expect(ics).toContain("BEGIN:VCALENDAR");
+  expect(ics).toContain("SUMMARY:Copenhagen");
+  expect(ics).toContain("SUMMARY:Berlin");
+  // All-day exclusive DTEND for Copenhagen (1–4 Jul → checkout the 4th).
+  expect(ics).toContain("DTEND;VALUE=DATE:20260704");
+});
+
+test("invokes window.print for the Print / Save as PDF action", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Journey DSL").fill(TWO_HOP);
+
+  // Stub print so the action can be observed without opening a real dialog.
+  await page.evaluate(() => {
+    (window as unknown as { __printed: boolean }).__printed = false;
+    window.print = () => {
+      (window as unknown as { __printed: boolean }).__printed = true;
+    };
+  });
+
+  await page.getByRole("button", { name: /Export/ }).click();
+  await page.getByRole("menuitem", { name: "Print / Save as PDF" }).click();
+
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __printed: boolean }).__printed))
+    .toBe(true);
+});
+
+test("first-run hint appears on a fresh visit and stays gone once dismissed", async ({ page }) => {
+  await page.goto("/");
+  // Fresh context = empty localStorage = no saved plans, so the nudge shows.
+  const hint = page.locator(".first-run-hint");
+  await expect(hint).toBeVisible();
+
+  await page.getByRole("button", { name: "Dismiss hint" }).click();
+  await expect(hint).toHaveCount(0);
+
+  // Dismissal persists: it doesn't return after a reload.
+  await page.reload();
+  await expect(page.locator(".first-run-hint")).toHaveCount(0);
+});
+
+test("flags a date-sanity warning for an activity outside its hop window", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Journey DSL").fill(`hop Copenhagen:
+  dates: 2026-07-05 .. 2026-07-08
+  activity: Tivoli @ 2026-07-20
+`);
+
+  // The gentle warning lands in the existing diagnostics list as a warning item.
+  const warning = page.locator(".diagnostics__item--warning");
+  await expect(warning).toContainText(/outside/);
+});
+
 test("Save overwrites the loaded plan in place, with a dirty indicator", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Journey DSL").fill(TWO_HOP);

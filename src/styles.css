@@ -82,6 +82,42 @@ body {
   gap: 6px;
 }
 
+/* ---- Export menu ---- */
+.toolbar__export {
+  position: relative;
+}
+
+.toolbar__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+}
+
+.toolbar__menu-item {
+  padding: 8px 10px;
+  font-size: 13px;
+  text-align: left;
+  color: #1e293b;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.toolbar__menu-item:hover,
+.toolbar__menu-item:focus {
+  background: #eef2ff;
+}
+
 .toolbar__loaded {
   font-size: 12px;
   color: #cbd5e1;
@@ -161,6 +197,52 @@ body {
   min-width: 0;
   padding: 16px;
   gap: 14px;
+}
+
+/* ---- First-run hint ---- */
+.first-run-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 14px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: #eff6ff;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.first-run-hint__text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.first-run-hint__link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.first-run-hint__dismiss {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.first-run-hint__dismiss:hover {
+  color: var(--ink);
 }
 
 /* ---- Editor ---- */
@@ -787,5 +869,66 @@ body {
   .app__sidebar {
     width: 100%;
     height: 45%;
+  }
+}
+
+/* ---- Print / Save as PDF ---- *
+ * Lay out the summary + timeline cleanly on paper, hiding all interactive
+ * chrome (toolbar, editor, diagnostics, geocoding status, resize divider, menus,
+ * first-run hint). The browser's own print-to-PDF does the rest — no dependency.
+ *
+ * The Leaflet map is intentionally excluded: it renders to tiles + absolutely
+ * positioned panes that print unreliably (blank/clipped) and it offers little on
+ * paper, where the summary and timeline carry the plan. */
+@media print {
+  /* Release the 100vh / overflow:hidden viewport lock so content flows onto
+     pages instead of being clipped to one screen. */
+  html,
+  body,
+  #root,
+  .app,
+  .app__body,
+  .app__main {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .toolbar,
+  .app__sidebar,
+  .app__geostatus,
+  .app__divider,
+  .first-run-hint,
+  .map,
+  .timeline__footer,
+  .editor__suggest,
+  .modal-backdrop,
+  .toolbar__menu {
+    display: none !important;
+  }
+
+  .app__main {
+    padding: 0 !important;
+    gap: 16px !important;
+  }
+
+  /* The timeline height is set inline from JS for the on-screen resizer; on
+     paper let it size to its content so no rows are cut off. */
+  .app__timeline {
+    height: auto !important;
+    min-height: 0 !important;
+    flex-shrink: 1 !important;
+  }
+
+  /* Keep individual timeline rows and summary cards from splitting across a
+     page break where it's avoidable. */
+  .timeline__row,
+  .summary__item {
+    break-inside: avoid;
+  }
+
+  .summary {
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 12px;
   }
 }

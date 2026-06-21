@@ -15,6 +15,8 @@ function setup(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
     onDelete: vi.fn(),
     onLoadExample: vi.fn(),
     onShowHelp: vi.fn(),
+    onPrint: vi.fn(),
+    onDownloadIcs: vi.fn(),
     shareUrl: () => "https://example.test/#plan=abc",
     ...overrides,
   };
@@ -74,5 +76,47 @@ describe("Toolbar dirty indicator", () => {
   it("shows neither name nor hint for a never-saved buffer", () => {
     setup({ loadedName: null, dirty: false });
     expect(screen.queryByText(/unsaved changes/)).not.toBeInTheDocument();
+  });
+});
+
+describe("Toolbar export menu", () => {
+  it("is closed until the Export button is clicked", () => {
+    setup();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Export/ }));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+  });
+
+  it("fires onPrint and closes when Print / Save as PDF is chosen", () => {
+    const props = setup();
+    fireEvent.click(screen.getByRole("button", { name: /Export/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Print / Save as PDF" }));
+    expect(props.onPrint).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
+  it("fires onDownloadIcs and closes when Download .ics is chosen", () => {
+    const props = setup();
+    fireEvent.click(screen.getByRole("button", { name: /Export/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Download .ics" }));
+    expect(props.onDownloadIcs).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
+  it("closes on Escape without firing an action", () => {
+    const props = setup();
+    fireEvent.click(screen.getByRole("button", { name: /Export/ }));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(props.onPrint).not.toHaveBeenCalled();
+    expect(props.onDownloadIcs).not.toHaveBeenCalled();
+  });
+
+  it("closes on an outside click", () => {
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: /Export/ }));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 });

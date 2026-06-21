@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "./parse";
-import { resolve } from "./resolve";
+import { dateDiagnostics, resolve } from "./resolve";
 
 function resolved(dsl: string) {
   return resolve(parse(dsl).trip, { defaultStart: "2026-07-01" });
+}
+
+function dateWarnings(dsl: string) {
+  const trip = parse(dsl).trip;
+  return dateDiagnostics(trip, resolve(trip, { defaultStart: "2026-07-01" }));
 }
 
 describe("resolve", () => {
@@ -97,5 +102,114 @@ hop Melbourne:
     const trip = resolved(``);
     expect(trip.hops).toHaveLength(0);
     expect(trip.totalDays).toBe(0);
+  });
+});
+
+describe("dateDiagnostics", () => {
+  it("warns when a fixed-date activity falls before the hop window", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+  dates: 2026-07-05 .. 2026-07-08
+  activity: Tivoli @ 2026-07-03
+`);
+    expect(w).toHaveLength(1);
+    expect(w[0].severity).toBe("warning");
+    expect(w[0].line).toBe(4); // the activity line
+    expect(w[0].message).toMatch(/outside/);
+  });
+
+  it("warns when a fixed-date activity falls after the hop window", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+  dates: 2026-07-05 .. 2026-07-08
+  activity: Tivoli @ 2026-07-12
+`);
+    expect(w).toHaveLength(1);
+    expect(w[0].severity).toBe("warning");
+  });
+
+  it("does not warn for an activity on the hop's start or end boundary", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+  dates: 2026-07-05 .. 2026-07-08
+  activity: Arrival drinks @ 2026-07-05
+  activity: Farewell @ 2026-07-08
+`);
+    expect(w).toHaveLength(0);
+  });
+
+  it("does not warn for an activity inside the hop window", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+  dates: 2026-07-05 .. 2026-07-08
+  activity: Round Tower @ 2026-07-06
+`);
+    expect(w).toHaveLength(0);
+  });
+
+  it("warns on a gap between two explicitly-dated hops", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+  dates: 2026-07-01 .. 2026-07-04
+hop Berlin:
+  dates: 2026-07-06 .. 2026-07-09
+`);
+    expect(w).toHaveLength(1);
+    expect(w[0].severity).toBe("warning");
+    expect(w[0].line).toBe(4); // Berlin's header line
+    expect(w[0].message).toMatch(/gap/);
+  });
+
+  it("warns on an overlap between two explicitly-dated hops", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+  dates: 2026-07-01 .. 2026-07-05
+hop Berlin:
+  dates: 2026-07-03 .. 2026-07-09
+`);
+    expect(w).toHaveLength(1);
+    expect(w[0].message).toMatch(/overlap/);
+  });
+
+  it("does not warn when explicitly-dated hops meet exactly", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+  dates: 2026-07-01 .. 2026-07-04
+hop Berlin:
+  dates: 2026-07-04 .. 2026-07-07
+`);
+    expect(w).toHaveLength(0);
+  });
+
+  it("does not warn on chained stay-only hops (no explicit dates)", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+  stay: 3d
+hop Berlin:
+  stay: 3d
+hop Prague:
+  stay: 2d
+`);
+    expect(w).toHaveLength(0);
+  });
+
+  it("produces no warnings for an undated plan", () => {
+    const w = dateWarnings(`
+hop Copenhagen:
+hop Berlin:
+  activity: Wander around
+`);
+    expect(w).toHaveLength(0);
+  });
+
+  it("does not flag a gap when only the later hop is chained off an early one", () => {
+    // The first hop is dated; the second uses `stay:` and abuts by construction.
+    const w = dateWarnings(`
+hop Copenhagen:
+  dates: 2026-07-01 .. 2026-07-04
+hop Berlin:
+  stay: 3d
+`);
+    expect(w).toHaveLength(0);
   });
 });

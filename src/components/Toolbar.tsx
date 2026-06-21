@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ToolbarProps {
   plans: string[];
@@ -14,6 +14,10 @@ interface ToolbarProps {
   onDelete: (name: string) => void;
   onLoadExample: () => void;
   onShowHelp: () => void;
+  /** Open the browser print dialog (print / save-as-PDF). */
+  onPrint: () => void;
+  /** Download the current plan as an .ics calendar file. */
+  onDownloadIcs: () => void;
   /** Build the self-contained share URL for the current plan, on demand. */
   shareUrl: () => string;
 }
@@ -28,12 +32,36 @@ export function Toolbar({
   onDelete,
   onLoadExample,
   onShowHelp,
+  onPrint,
+  onDownloadIcs,
   shareUrl,
 }: ToolbarProps) {
   const [name, setName] = useState("");
   const [selected, setSelected] = useState("");
   const [copied, setCopied] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const nameInput = useRef<HTMLInputElement>(null);
+  const exportMenu = useRef<HTMLDivElement>(null);
+
+  // Close the Export menu on an outside click or Escape — the smallest
+  // accessible dropdown behavior, no extra dependency.
+  useEffect(() => {
+    if (!exportOpen) return;
+    function onPointerDown(e: MouseEvent) {
+      if (exportMenu.current && !exportMenu.current.contains(e.target as Node)) {
+        setExportOpen(false);
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setExportOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [exportOpen]);
 
   async function copyShareLink() {
     const url = shareUrl();
@@ -135,6 +163,40 @@ export function Toolbar({
         <button className="btn" onClick={copyShareLink}>
           {copied ? "Link copied!" : "Copy share link"}
         </button>
+        <div className="toolbar__export" ref={exportMenu}>
+          <button
+            className="btn"
+            aria-haspopup="menu"
+            aria-expanded={exportOpen}
+            onClick={() => setExportOpen((open) => !open)}
+          >
+            Export ▾
+          </button>
+          {exportOpen && (
+            <div className="toolbar__menu" role="menu" aria-label="Export options">
+              <button
+                className="toolbar__menu-item"
+                role="menuitem"
+                onClick={() => {
+                  setExportOpen(false);
+                  onPrint();
+                }}
+              >
+                Print / Save as PDF
+              </button>
+              <button
+                className="toolbar__menu-item"
+                role="menuitem"
+                onClick={() => {
+                  setExportOpen(false);
+                  onDownloadIcs();
+                }}
+              >
+                Download .ics
+              </button>
+            </div>
+          )}
+        </div>
         <button className="btn btn--ghost" onClick={onShowHelp}>
           DSL guide
         </button>
