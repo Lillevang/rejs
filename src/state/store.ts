@@ -6,6 +6,7 @@ import { EXAMPLE_DSL } from "../lib/example";
 const CURRENT_KEY = "rejs.current.v1";
 const PLANS_KEY = "rejs.plans.v1";
 const HINT_DISMISSED_KEY = "rejs.firstRunHintDismissed.v1";
+const ORIENTATION_HINT_DISMISSED_KEY = "rejs.orientationHintDismissed.v1";
 
 type PlanMap = Record<string, string>;
 
@@ -77,4 +78,14 @@ export function isFirstRunHintDismissed(): boolean {
 /** Permanently dismiss the first-run hint so it never shows again. */
 export function dismissFirstRunHint(): void {
   getStorage()?.setItem(HINT_DISMISSED_KEY, "1");
+}
+
+/** Whether the user has dismissed the one-time "rotate for a wider timeline" hint. */
+export function isOrientationHintDismissed(): boolean {
+  return getStorage()?.getItem(ORIENTATION_HINT_DISMISSED_KEY) === "1";
+}
+
+/** Permanently dismiss the orientation hint so it never shows again. */
+export function dismissOrientationHint(): void {
+  getStorage()?.setItem(ORIENTATION_HINT_DISMISSED_KEY, "1");
 }
