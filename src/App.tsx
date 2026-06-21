@@ -7,6 +7,7 @@ import { Timeline } from "./components/Timeline";
 import { Summary } from "./components/Summary";
 import { HelpModal } from "./components/HelpModal";
 import { FirstRunHint } from "./components/FirstRunHint";
+import { OrientationHint } from "./components/OrientationHint";
 import { useResizableHeight } from "./state/use-resizable-height";
 import {
   activityQuery,
@@ -38,6 +39,9 @@ import {
   savePlan,
 } from "./state/store";
 import { geocodeKey, useGeocoder } from "./state/use-geocoder";
+import { PHONE_QUERY, useMediaQuery } from "./state/use-media-query";
+
+type MobileTab = "map" | "plan" | "edit";
 
 export default function App() {
   // A `#plan=…` share link wins over the autosaved buffer on first load; from
@@ -59,6 +63,11 @@ export default function App() {
   // dismissal persists to localStorage so it never reappears.
   const [hintDismissed, setHintDismissed] = useState(() => isFirstRunHintDismissed());
   const { height: timelineHeight, handleProps } = useResizableHeight("rejs.timelineHeight", 220);
+  // Below the phone breakpoint the three views can't share the screen, so they
+  // become full-bleed tabs. The map is the default (the most useful artifact to
+  // carry while traveling); the editor is summoned via the Edit tab.
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("map");
 
   // Parse + resolve on every edit. Both are pure and cheap, so no debounce needed.
   const { trip, diagnostics: parseDiagnostics } = useMemo(() => parse(dsl), [dsl]);
@@ -83,6 +92,11 @@ export default function App() {
     return list;
   }, [resolved]);
   const { locations, candidates } = useGeocoder(names);
+
+  // Diagnostic counts drive the Edit-tab badge on mobile (so problems are
+  // visible even when the editor is on a hidden tab).
+  const errorCount = diagnostics.filter((d) => d.severity === "error").length;
+  const warningCount = diagnostics.filter((d) => d.severity === "warning").length;
 
   // Turn a geocoder status into a (location, state) pair for the UI.
   const fromStatus = (
@@ -178,6 +192,28 @@ export default function App() {
     }
   }, []);
 
+  // On a phone, track the visual viewport height in a CSS var so the layout
+  // shrinks to the space *above* the soft keyboard (instead of the keyboard
+  // covering the active editor line). No-op when visualViewport is unavailable.
+  useEffect(() => {
+    const vv = globalThis.visualViewport;
+    if (!isPhone || !vv) {
+      document.documentElement.style.removeProperty("--app-vh");
+      return;
+    }
+    const sync = () => {
+      document.documentElement.style.setProperty("--app-vh", `${vv.height}px`);
+    };
+    sync();
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      vv.removeEventListener("scroll", sync);
+      document.documentElement.style.removeProperty("--app-vh");
+    };
+  }, [isPhone]);
+
   // Autosave the working buffer (debounced) so a reload restores the journey.
   useEffect(() => {
     const id = setTimeout(() => saveCurrent(dsl), 400);
@@ -228,6 +264,171 @@ export default function App() {
     ...driveStops.filter((s) => s.locationState === "notfound").map((s) => s.stop.name),
   ];
 
+  // On a phone, tapping a timeline row (or summary, via the same handler) makes
+  // that hop active and jumps to the map so you can see where it is. Reuses the
+  // existing activeHopId/onHover wiring — no new state, tap bound to hover.
+  const focusHopOnMap = (hopId: string | null) => {
+    setActiveHopId(hopId);
+    if (isPhone && hopId != null) setMobileTab("map");
+  };
+
+  const geostatus = (
+    <div className="app__geostatus">
+      {pending > 0 && <span>Locating {pending}…</span>}
+      {notFound.length > 0 && (
+        <span className="app__geostatus--warn">Couldn’t locate: {notFound.join(", ")}</span>
+      )}
+      {ambiguousHops.map(({ hop, candidates: list }) => (
+        <div key={hop.id} className="app__disambig" data-hop={hop.name}>
+          <span className="app__disambig-label">Which {hop.name}?</span>
+          {list.slice(0, 3).map((c) => (
+            <button
+              key={`${c.lat},${c.lng}`}
+              type="button"
+              className="app__disambig-option"
+              title={c.label}
+              onClick={() => moveHop(hop.id, c.lat, c.lng)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+
+  const mapView = (
+    <MapView
+      hops={displayHops}
+      start={displayStart}
+      end={displayEnd}
+      activeHopId={activeHopId}
+      onHover={setActiveHopId}
+      onHopMove={moveHop}
+      onMapClick={placeActiveHop}
+    />
+  );
+
+  const editorPanel = (
+    <>
+      {showHint && <FirstRunHint onShowHelp={() => setHelpOpen(true)} onDismiss={dismissHint} />}
+      <Editor
+        value={dsl}
+        diagnostics={diagnostics}
+        focusLine={focusLine}
+        focusRange={focusRange}
+        onChange={setDsl}
+      />
+      <Diagnostics diagnostics={diagnostics} onSelect={setFocusLine} />
+    </>
+  );
+
+  if (isPhone) {
+    return (
+      <div className="app app--phone">
+        <Toolbar
+          plans={plans}
+          loadedName={loadedName}
+          dirty={dirty}
+          compact
+          onSave={() => {
+            if (loadedName == null) return;
+            savePlan(loadedName, dsl);
+            setPlans(listPlans());
+          }}
+          onSaveAs={(name) => {
+            savePlan(name, dsl);
+            setPlans(listPlans());
+            setLoadedName(name);
+          }}
+          onLoad={(name) => {
+            const text = loadPlan(name);
+            if (text != null) {
+              setDsl(text);
+              setLoadedName(name);
+            }
+          }}
+          onDelete={(name) => {
+            deletePlan(name);
+            setPlans(listPlans());
+            if (name === loadedName) setLoadedName(null);
+          }}
+          onLoadExample={() => {
+            setDsl(EXAMPLE_DSL);
+            setLoadedName(null);
+          }}
+          onShowHelp={() => setHelpOpen(true)}
+          onPrint={() => window.print()}
+          onDownloadIcs={() =>
+            downloadTextFile(icsFilename(resolved.title), planToIcs(resolved), "text/calendar")
+          }
+          shareUrl={() => buildShareUrl(dsl)}
+        />
+
+        <main className="app__mobile-view">
+          {mobileTab === "map" && (
+            <div className="app__mobile-map">
+              {mapView}
+              {geostatus}
+            </div>
+          )}
+          {mobileTab === "plan" && (
+            <div className="app__mobile-plan">
+              <Summary trip={resolved} />
+              <OrientationHint show={displayHops.length > 0} />
+              <div className="app__mobile-timeline">
+                <Timeline
+                  hops={displayHops}
+                  activeHopId={activeHopId}
+                  onHover={focusHopOnMap}
+                  onAddHop={addHop}
+                />
+              </div>
+            </div>
+          )}
+          {mobileTab === "edit" && <div className="app__mobile-edit">{editorPanel}</div>}
+        </main>
+
+        <nav className="app__tabs" aria-label="Views">
+          <button
+            type="button"
+            className={`app__tab${mobileTab === "map" ? " app__tab--active" : ""}`}
+            aria-pressed={mobileTab === "map"}
+            onClick={() => setMobileTab("map")}
+          >
+            Map
+          </button>
+          <button
+            type="button"
+            className={`app__tab${mobileTab === "plan" ? " app__tab--active" : ""}`}
+            aria-pressed={mobileTab === "plan"}
+            onClick={() => setMobileTab("plan")}
+          >
+            Plan
+          </button>
+          <button
+            type="button"
+            className={`app__tab${mobileTab === "edit" ? " app__tab--active" : ""}`}
+            aria-pressed={mobileTab === "edit"}
+            onClick={() => setMobileTab("edit")}
+          >
+            Edit
+            {(errorCount > 0 || warningCount > 0) && (
+              <span
+                className={`app__tab-badge${errorCount > 0 ? " app__tab-badge--error" : " app__tab-badge--warning"}`}
+                aria-hidden="true"
+              >
+                {errorCount > 0 ? errorCount : warningCount}
+              </span>
+            )}
+          </button>
+        </nav>
+
+        <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <Toolbar
@@ -269,53 +470,12 @@ export default function App() {
       />
 
       <div className="app__body">
-        <aside className="app__sidebar">
-          {showHint && (
-            <FirstRunHint onShowHelp={() => setHelpOpen(true)} onDismiss={dismissHint} />
-          )}
-          <Editor
-            value={dsl}
-            diagnostics={diagnostics}
-            focusLine={focusLine}
-            focusRange={focusRange}
-            onChange={setDsl}
-          />
-          <Diagnostics diagnostics={diagnostics} onSelect={setFocusLine} />
-        </aside>
+        <aside className="app__sidebar">{editorPanel}</aside>
 
         <main className="app__main">
           <Summary trip={resolved} />
-          <MapView
-            hops={displayHops}
-            start={displayStart}
-            end={displayEnd}
-            activeHopId={activeHopId}
-            onHover={setActiveHopId}
-            onHopMove={moveHop}
-            onMapClick={placeActiveHop}
-          />
-          <div className="app__geostatus">
-            {pending > 0 && <span>Locating {pending}…</span>}
-            {notFound.length > 0 && (
-              <span className="app__geostatus--warn">Couldn’t locate: {notFound.join(", ")}</span>
-            )}
-            {ambiguousHops.map(({ hop, candidates: list }) => (
-              <div key={hop.id} className="app__disambig" data-hop={hop.name}>
-                <span className="app__disambig-label">Which {hop.name}?</span>
-                {list.slice(0, 3).map((c) => (
-                  <button
-                    key={`${c.lat},${c.lng}`}
-                    type="button"
-                    className="app__disambig-option"
-                    title={c.label}
-                    onClick={() => moveHop(hop.id, c.lat, c.lng)}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
+          {mapView}
+          {geostatus}
           <div
             className="app__divider"
             role="separator"

@@ -862,13 +862,237 @@ body {
   white-space: pre;
 }
 
-@media (max-width: 860px) {
+/* Tablet (and narrow desktop): keep the productive split, but stack it so the
+   sidebar editor sits above the views. Phones never reach this rule — below
+   640px App.tsx swaps to the full-bleed tabbed layout (.app--phone) instead. */
+@media (max-width: 768px) {
+  .app__sidebar {
+    width: 320px;
+  }
+}
+
+@media (max-width: 700px) {
   .app__body {
     flex-direction: column;
   }
   .app__sidebar {
     width: 100%;
     height: 45%;
+  }
+}
+
+/* ---- Phone: full-bleed tabbed layout ---- *
+ * Below 640px the three views can't share a screen, so each becomes a full
+ * tab. Map is the default (carry-your-trip job); the editor is on the Edit tab.
+ * `--app-vh` (set from visualViewport in App.tsx) makes the layout shrink above
+ * the soft keyboard so the active editor line and suggestions stay visible. */
+.app--phone {
+  height: var(--app-vh, 100vh);
+}
+
+.app--phone .toolbar {
+  flex-wrap: nowrap;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.toolbar--compact .toolbar__brand {
+  margin-right: auto;
+}
+
+.toolbar__dirty-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #fff;
+  vertical-align: middle;
+}
+
+.toolbar__menu-label {
+  padding: 6px 10px 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-soft);
+}
+
+.toolbar__menu-sep {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--line);
+}
+
+.toolbar__menu-plan {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar__menu-plan-load {
+  flex: 1;
+}
+
+.toolbar__menu-plan-delete {
+  border: none;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px 10px;
+}
+
+.app__mobile-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app__mobile-map {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 6px;
+}
+
+.app__mobile-plan {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.app__mobile-timeline {
+  flex: 1;
+  min-height: 240px;
+  display: flex;
+}
+
+.app__mobile-edit {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The editor fills the Edit tab; padding-bottom keeps the last line clear of
+   the tab bar. */
+.app__mobile-edit .editor {
+  padding: 12px 10px 0;
+}
+
+/* ---- Bottom tab bar ---- */
+.app__tabs {
+  display: flex;
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.app__tab {
+  flex: 1;
+  min-height: 48px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.app__tab--active {
+  color: var(--accent);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.app__tab-badge {
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app__tab-badge--error {
+  background: var(--error);
+}
+
+.app__tab-badge--warning {
+  background: var(--warning);
+}
+
+/* ---- Orientation hint ---- */
+.orientation-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: #eff6ff;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.orientation-hint__text {
+  flex: 1;
+}
+
+.orientation-hint__dismiss {
+  border: none;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* ---- Touch: bigger map hit targets (M6) ---- *
+ * On coarse pointers, give the small markers a transparent ~44px hit area so a
+ * thumb can land them, without changing their visual size. */
+@media (pointer: coarse) {
+  .map-activity-wrapper,
+  .map-pin-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .map-activity::before,
+  .map-drive-stop::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+
+  .map-activity,
+  .map-drive-stop {
+    position: relative;
   }
 }
 
