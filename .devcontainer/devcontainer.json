@@ -13,13 +13,13 @@
     //
     // Replace the source path with the absolute path to the repo on your host, and
     // rename `other-repo` in the target to match (it appears at /workspaces/other-repo).
-    "source=/home/jls/repos/personal/infra,target=/workspaces/infra,type=bind,readonly"
+    "source=/home/jls/repos/personal/infra,target=/workspaces/infra,type=bind,readonly",
+    "source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind"
   ],
 
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
-    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
-    "GH_TOKEN": "${localEnv:GH_TOKEN}"
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
   },
 
   "postCreateCommand": "/usr/local/bin/post-create.sh",

@@ -6,7 +6,10 @@
       "Bash(npx playwright *)",
       "Bash(cp /tmp/check-lines.mjs /workspaces/rejs/check-lines.mjs *)",
       "Bash(curl -s -m 10 -A \"rejs-test\" \"https://nominatim.openstreetmap.org/search?format=json&q=Berlin&limit=1\")",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(./.agent/scripts/check.sh)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ],
     "additionalDirectories": ["/tmp"]
   }
