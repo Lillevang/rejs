@@ -31,14 +31,14 @@ geocoding lookups hit Nominatim.
 
 When configured, rejs mints a short link via the
 [url-shortener service](https://github.com/lillevang/url-shortener) (public host
-`s.jlvang.dev`) so a journey gets a short, memorable URL that stays stable while
+`s.lvang.dev`) so a journey gets a short, memorable URL that stays stable while
 the plan behind it changes.
 
 ### Flow
 
 1. **First share** (`src/lib/share-link.ts` → `makeShareLink`): `POST /` with the
    long link as `target`, receive `{ slug, short_url }`, then `PUT /{slug}` with
-   the target rewritten to embed `&s=<slug>`. Share `https://s.jlvang.dev/<slug>`.
+   the target rewritten to embed `&s=<slug>`. Share `https://s.lvang.dev/<slug>`.
 2. **Open a short link**: `GET /{slug}` `302`-redirects to the long target
    (fragment intact). rejs reads `&s=<slug>` from the hash and remembers the slug.
 3. **Edit and re-share**: because rejs knows the slug, it `PUT /{slug}`s the
@@ -58,10 +58,10 @@ instead. Sharing is never blocked by the shortener being down.
 
 ### Configuration
 
-| Where                              | Setting                              | Effect                                                                                                                                                                         |
-| ---------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Build (`VITE_SHORTENER_URL`)       | e.g. `https://s.jlvang.dev`          | Enables the integration. **Unset = disabled**, long links only. Vite inlines it at build time; the `Dockerfile` exposes it as an `ARG`. See [`.env.example`](../.env.example). |
-| nginx CSP (`security-headers.inc`) | `connect-src … https://s.jlvang.dev` | The browser must be allowed to `fetch()` the shortener origin, or the request is blocked by CSP before it leaves the page. Must match `VITE_SHORTENER_URL`.                    |
+| Where                              | Setting                             | Effect                                                                                                                                                                         |
+| ---------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Build (`VITE_SHORTENER_URL`)       | e.g. `https://s.lvang.dev`          | Enables the integration. **Unset = disabled**, long links only. Vite inlines it at build time; the `Dockerfile` exposes it as an `ARG`. See [`.env.example`](../.env.example). |
+| nginx CSP (`security-headers.inc`) | `connect-src … https://s.lvang.dev` | The browser must be allowed to `fetch()` the shortener origin, or the request is blocked by CSP before it leaves the page. Must match `VITE_SHORTENER_URL`.                    |
 
 ### Service-side dependencies
 

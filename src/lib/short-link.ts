@@ -1,4 +1,4 @@
-// Client for the url-shortener service (e.g. https://s.jlvang.dev). Turns a
+// Client for the url-shortener service (e.g. https://s.lvang.dev). Turns a
 // long, self-contained rejs share URL into a short, stable link.
 //
 // Every call fails soft: a disabled integration, network error, timeout, CORS

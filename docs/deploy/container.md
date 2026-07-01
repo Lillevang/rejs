@@ -17,10 +17,10 @@ built and configured; for deploying it to the cluster see
 
 ### Build args
 
-| Arg                  | Purpose                                                                                                                                                                                                                       |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SITE_VERSION`       | Version label, exported to the build env (accepted for parity with release tooling).                                                                                                                                          |
-| `VITE_SHORTENER_URL` | Base URL of the url-shortener (e.g. `https://s.jlvang.dev`). Vite inlines `VITE_*` at build time, so it must be set at **build**, not runtime. Empty = the [share-link](../share-links.md) shortener integration is disabled. |
+| Arg                  | Purpose                                                                                                                                                                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SITE_VERSION`       | Version label, exported to the build env (accepted for parity with release tooling).                                                                                                                                         |
+| `VITE_SHORTENER_URL` | Base URL of the url-shortener (e.g. `https://s.lvang.dev`). Vite inlines `VITE_*` at build time, so it must be set at **build**, not runtime. Empty = the [share-link](../share-links.md) shortener integration is disabled. |
 
 ## nginx config
 
@@ -42,7 +42,7 @@ Baseline headers plus a **Content-Security-Policy** tuned for this app:
   markers at runtime and cannot function without it.
 - `img-src 'self' data: blob: https://server.arcgisonline.com` — Esri/ArcGIS map
   tiles + bundled Leaflet marker icons.
-- `connect-src 'self' https://nominatim.openstreetmap.org https://s.jlvang.dev` —
+- `connect-src 'self' https://nominatim.openstreetmap.org https://s.lvang.dev` —
   the Nominatim geocoder and the url-shortener. **The shortener origin here must
   match `VITE_SHORTENER_URL`**, or the browser blocks the mint request via CSP.
 

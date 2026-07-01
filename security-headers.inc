@@ -13,4 +13,4 @@ add_header Permissions-Policy "geolocation=(), camera=(), microphone=()" always;
 #   marker icons
 # - connect-src allows the public Nominatim geocoding API (XHR/fetch) and the
 #   url-shortener service (must match VITE_SHORTENER_URL, used to mint share links)
-add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://nominatim.openstreetmap.org https://s.jlvang.dev; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" always;
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://nominatim.openstreetmap.org https://s.lvang.dev; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" always;
