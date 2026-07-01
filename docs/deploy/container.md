@@ -56,9 +56,12 @@ the file (one directive per line).
 
 ## Publish
 
-A GitHub Actions workflow builds and pushes `ghcr.io/lillevang/rejs` on push to
-`main` and on `v*` tags (multi-arch). A `Taskfile.yaml` (`task build` /
-`task verify` / `task release`) packages and publishes locally.
+A GitHub Actions workflow (`.github/workflows/container.yaml`) builds and pushes
+`ghcr.io/lillevang/rejs` on push to `main` and on `v*` tags (multi-arch). It
+passes `VITE_SHORTENER_URL=https://s.lvang.dev` as a build arg, so the published
+image has the shortener integration **enabled**; keep that value in sync with the
+CSP `connect-src` host in `security-headers.inc`. A `Taskfile.yaml` (`task build`
+/ `task verify` / `task release`) packages and publishes locally.
 
 ## Config summary
 

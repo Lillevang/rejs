@@ -56,5 +56,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             SITE_VERSION=${{ steps.version.outputs.value }}
+            VITE_SHORTENER_URL=https://s.lvang.dev
           cache-from: type=gha
           cache-to: type=gha,mode=max
