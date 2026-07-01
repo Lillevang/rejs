@@ -9,3 +9,8 @@ README.agent.md
 .pre-commit-config.yaml
 pnpm-lock.yaml
 package-lock.json
+
+# nginx include: Prettier infers an `.inc` file as HTML and reflows it, which
+# collapses the line-based `#` comments and directives into invalid config
+# (nginx then fails to start). Keep it hand-formatted.
+security-headers.inc
