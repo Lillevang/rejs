@@ -18,6 +18,8 @@ If it fails, fix the failure. Do not declare success. Do not skip steps. Do not 
 
 The check script runs (in order): codemap regeneration, API client generation, formatting, linting, type checking, unit tests, and Playwright tests when the project has Playwright coverage. All configured checks must pass.
 
+Part of "done" is **documentation**: if your change alters behavior, architecture, the DSL, deployment, or configuration, update the relevant doc under `docs/` in the same change (see [Documentation](#documentation)).
+
 ## Project context
 
 rejs is a **backend-free journey planner**. The user writes a plain-text DSL
@@ -98,6 +100,20 @@ If the repo has OpenAPI specs in `apis/`, the check script regenerates clients i
 - Unit tests must pass before declaring done.
 - For frontend feature changes, run the Playwright recording: `./.agent/scripts/record-feature.sh <feature-name>`. The mp4 lands in `.agent/recordings/`. Review it before declaring done.
 - New functionality requires new tests. Bug fixes require a regression test.
+
+## Documentation
+
+Project documentation lives in [`docs/`](../docs/) (see [`docs/README.md`](../docs/README.md) for the index). The repo-root `README.md` is the entry point; deeper topics — `docs/architecture.md`, `docs/share-links.md`, `docs/deploy/` — live under `docs/`.
+
+**Keep docs in sync as part of the change, not afterward.** If your change alters any of the following, update the relevant doc in the **same commit**:
+
+- **Behavior or features** → root `README.md` (feature list) and the matching `docs/` topic.
+- **Architecture / data flow / module layout** → `docs/architecture.md`.
+- **Share links or the url-shortener integration** → `docs/share-links.md`.
+- **Container, nginx, CSP/security headers, or build/config (env vars)** → `docs/deploy/container.md` (and `docs/deploy/infra-onboarding.md` if the deploy contract changes).
+- **The DSL** → the in-app guide is canonical (`src/lib/dsl-reference.ts`, snippet-tested); refresh the root README teaser if the surface changed.
+
+Don't duplicate a canonical source — link to it. If a change spans code and docs, the docs update is not optional.
 
 ## What you should NOT do
 

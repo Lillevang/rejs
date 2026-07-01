@@ -124,7 +124,10 @@ drift out of sync with the parser.
 - **Saving** — one autosaved working buffer plus named save slots, all in
   `localStorage`. "Save" overwrites the loaded plan in place; "Save as…" creates
   a new slot; an "• unsaved changes" hint shows when the buffer diverges.
-- **Shareable links** — a plan can be encoded into a URL to share read-only.
+- **Shareable links** — a plan is encoded into a self-contained URL. With the
+  url-shortener configured, "Copy share link" mints a short, stable link that
+  keeps pointing at the latest plan as it's edited; otherwise it falls back to
+  the long self-contained link. See [`docs/share-links.md`](./docs/share-links.md).
 - **Export** — print / save as PDF (clean print stylesheet), or download a
   calendar `.ics` (one all-day event per hop, fixed-date activities as events).
 - **First-run hint** — a one-line, dismissible nudge above the editor on a
@@ -159,6 +162,10 @@ The data flow is one-directional: **DSL text → `parse` → `resolve` → rende
 Every feature that "edits the plan" (dragging a pin, quick-add, picking a
 geocode candidate) does so by editing the DSL text and letting the pipeline
 re-render — the text stays the single source of truth.
+
+For the internals in depth — the pipeline, module map, geocoding, and
+persistence — see [`docs/architecture.md`](./docs/architecture.md). Full
+project documentation lives in [`docs/`](./docs/README.md).
 
 ---
 
