@@ -10,6 +10,12 @@ FROM node:22.12.0-alpine AS builder
 ARG SITE_VERSION=dev
 ENV SITE_VERSION=${SITE_VERSION}
 
+# Base URL of the url-shortener service (e.g. https://s.jlvang.dev). Vite inlines
+# VITE_* vars at build time, so this must be present for `npm run build`. Empty
+# (the default) disables the shortener and share links stay long/self-contained.
+ARG VITE_SHORTENER_URL=
+ENV VITE_SHORTENER_URL=${VITE_SHORTENER_URL}
+
 WORKDIR /app
 
 # Install dependencies against the committed lockfile for reproducible builds.

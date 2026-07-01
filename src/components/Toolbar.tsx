@@ -46,8 +46,11 @@ interface ToolbarProps {
   onPrint: () => void;
   /** Download the current plan as an .ics calendar file. */
   onDownloadIcs: () => void;
-  /** Build the self-contained share URL for the current plan, on demand. */
-  shareUrl: () => string;
+  /**
+   * Build the share URL for the current plan, on demand. Async because it may
+   * call the url-shortener; it always resolves (falling back to the long link).
+   */
+  shareUrl: () => Promise<string>;
 }
 
 export function Toolbar({
@@ -81,7 +84,7 @@ export function Toolbar({
   useDismissable(overflowMenu, overflowOpen, () => setOverflowOpen(false));
 
   async function copyShareLink() {
-    const url = shareUrl();
+    const url = await shareUrl();
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

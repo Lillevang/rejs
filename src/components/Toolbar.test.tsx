@@ -17,7 +17,7 @@ function setup(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
     onShowHelp: vi.fn(),
     onPrint: vi.fn(),
     onDownloadIcs: vi.fn(),
-    shareUrl: () => "https://example.test/#plan=abc",
+    shareUrl: () => Promise.resolve("https://example.test/#plan=abc"),
     ...overrides,
   };
   render(<Toolbar {...props} />);

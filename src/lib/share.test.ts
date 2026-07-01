@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildShareUrl, decodePlanHash, encodePlanHash } from "./share";
+import { buildShareUrl, decodePlanHash, decodeShareSlug, encodePlanHash } from "./share";
 
 const SAMPLE = `trip "Round trip"
 currency: EUR
@@ -46,5 +46,36 @@ describe("share links", () => {
     expect(url.startsWith(`${location.origin}${location.pathname}#plan=`)).toBe(true);
     const hash = url.slice(url.indexOf("#"));
     expect(decodePlanHash(hash)).toBe(SAMPLE);
+  });
+});
+
+describe("share-link slug in the hash", () => {
+  it("round-trips the plan when a slug is present", () => {
+    const hash = encodePlanHash(SAMPLE, "abc123");
+    expect(decodePlanHash(hash)).toBe(SAMPLE);
+    expect(decodeShareSlug(hash)).toBe("abc123");
+  });
+
+  it("omits the slug segment when none is given", () => {
+    const hash = encodePlanHash(SAMPLE);
+    expect(hash).not.toContain("&s=");
+    expect(decodeShareSlug(hash)).toBeNull();
+  });
+
+  it("treats an empty or null slug as no slug", () => {
+    expect(encodePlanHash(SAMPLE, "")).not.toContain("&s=");
+    expect(encodePlanHash(SAMPLE, null)).not.toContain("&s=");
+  });
+
+  it("returns null for the slug when the hash carries no plan token", () => {
+    expect(decodeShareSlug("#s=abc")).toBeNull();
+    expect(decodeShareSlug("")).toBeNull();
+  });
+
+  it("carries the slug through a full share URL", () => {
+    const url = buildShareUrl(SAMPLE, "xy7z9");
+    const hash = url.slice(url.indexOf("#"));
+    expect(decodePlanHash(hash)).toBe(SAMPLE);
+    expect(decodeShareSlug(hash)).toBe("xy7z9");
   });
 });

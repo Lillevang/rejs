@@ -25,7 +25,8 @@ import { appendHop, setHopCoords } from "./dsl/edit";
 import { isAmbiguous } from "./geocode/ambiguity";
 import { colorForIndex } from "./lib/colors";
 import { EXAMPLE_DSL } from "./lib/example";
-import { buildShareUrl, decodePlanHash } from "./lib/share";
+import { decodePlanHash, decodeShareSlug } from "./lib/share";
+import { makeShareLink } from "./lib/share-link";
 import { icsFilename, planToIcs } from "./lib/export/ics";
 import { downloadTextFile } from "./lib/export/download";
 import {
@@ -50,6 +51,13 @@ export default function App() {
     () => decodePlanHash(globalThis.location?.hash ?? "") ?? loadCurrent(),
   );
   const [plans, setPlans] = useState<string[]>(() => listPlans());
+  // The short-link slug tied to the current buffer, if any. Learned from the
+  // `&s=` in an opened share link, or minted on first share; reused so edits
+  // update the same short link instead of minting a new one. Reset to null when
+  // a different plan is loaded (that content isn't what the short link points to).
+  const [shareSlug, setShareSlug] = useState<string | null>(() =>
+    decodeShareSlug(globalThis.location?.hash ?? ""),
+  );
   // The named slot the buffer was last saved to or loaded from, or null for a
   // never-saved buffer. Drives "Save" (overwrite in place) vs. "Save as…", and
   // the "unsaved changes" indicator below.
@@ -272,6 +280,16 @@ export default function App() {
     if (isPhone && hopId != null) setMobileTab("map");
   };
 
+  // Build the share URL on demand: prefer a stable short link via the
+  // url-shortener, falling back to the long self-contained link if it's
+  // unavailable. Persist any minted/updated slug so later edits update the same
+  // short link rather than minting a new one.
+  const getShareUrl = async () => {
+    const { url, slug } = await makeShareLink(dsl, shareSlug);
+    if (slug !== shareSlug) setShareSlug(slug);
+    return url;
+  };
+
   const geostatus = (
     <div className="app__geostatus">
       {pending > 0 && <span>Locating {pending}…</span>}
@@ -346,6 +364,7 @@ export default function App() {
             if (text != null) {
               setDsl(text);
               setLoadedName(name);
+              setShareSlug(null);
             }
           }}
           onDelete={(name) => {
@@ -356,13 +375,14 @@ export default function App() {
           onLoadExample={() => {
             setDsl(EXAMPLE_DSL);
             setLoadedName(null);
+            setShareSlug(null);
           }}
           onShowHelp={() => setHelpOpen(true)}
           onPrint={() => window.print()}
           onDownloadIcs={() =>
             downloadTextFile(icsFilename(resolved.title), planToIcs(resolved), "text/calendar")
           }
-          shareUrl={() => buildShareUrl(dsl)}
+          shareUrl={getShareUrl}
         />
 
         <main className="app__mobile-view">
@@ -469,7 +489,7 @@ export default function App() {
         onDownloadIcs={() =>
           downloadTextFile(icsFilename(resolved.title), planToIcs(resolved), "text/calendar")
         }
-        shareUrl={() => buildShareUrl(dsl)}
+        shareUrl={getShareUrl}
       />
 
       <div className="app__body">
