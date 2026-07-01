@@ -28,6 +28,7 @@ Breakpoints (M7): desktop split kept to 768px (narrower sidebar), stacks 640–7
 phone tabs only below 640px.
 
 Key decisions / gotchas:
+
 - The MAP stays mounted across tab switches (hidden full-size + out of flow via
   `.app__mobile-hidden`) so Leaflet retains pan/zoom. Do NOT hide it with 0×0 or
   display:none — Leaflet would need invalidateSize() on return. Plan/Edit panels

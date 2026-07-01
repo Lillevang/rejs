@@ -11,6 +11,7 @@ simple — IDEAS.md is explicitly ordered by "value per unit of added complexity
 and repeatedly says "add the least surface area."
 
 How to collaborate:
+
 - Refine vague/over-ambitious outline items into lower-risk, evolvable steps
   before building (e.g. they were fine with shipping M1 as tabs instead of the
   more ambitious bottom sheet they'd written down).
