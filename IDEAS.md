@@ -150,6 +150,50 @@ and Load example. Pure presentational regroup of the existing handlers.
 
 ---
 
+# Share privacy
+
+Shortening a share link stores the full plan URL (plan included) in the
+url-shortener's database; the long fragment-only link never leaves the browser
+(see `docs/share-links.md`). These ideas shrink the trust the shortened path
+asks for, ordered by value per unit of complexity.
+
+## S1. Tell the user before the plan leaves the browser
+
+**Type:** Trust / consent · **Effort:** Low
+**Area:** src/components/Toolbar.tsx (share action)
+
+Nothing in the UI says that sharing with shortening enabled sends the plan to
+the shortener and stores it there. Add a short, one-time note at the share
+affordance (same pattern as the first-run hint, dismissal persisted in
+localStorage): shortened links are stored server-side; the long link stays in
+your browser. No new machinery; it just makes the existing trade visible.
+
+## S2. Expiring share links
+
+**Type:** Trust · **Effort:** Low (client side)
+**Area:** src/lib/share-link.ts; url-shortener service
+
+The shortener accepts an optional TTL per link; rejs doesn't pass one, so
+shared plans sit in the database indefinitely. Mint share links with a
+generous default TTL (e.g. 90 days, possibly user-pickable) so they disappear
+again. For the privacy goal the service also needs expired rows actually
+deleted rather than only stopping resolution; that half is service-side work
+tracked in that repo.
+
+## S3. Password-protected shares (client-side encryption)
+
+**Type:** Trust / new feature · **Effort:** Medium
+**Area:** src/lib/share.ts, src/lib/share-link.ts; open/import flow
+
+Encrypt the plan in the browser before building the share URL: derive a key
+from a user-chosen password (WebCrypto: PBKDF2 + AES-GCM), put ciphertext in
+the fragment, prompt the recipient for the same password on open. The
+shortener then stores ciphertext nobody but the password holders can read.
+Works for long links too, but the shortened path is where it matters. Keep it
+optional; a password prompt on every open is friction most trips don't need.
+
+---
+
 ## 8. Bookkeeping while traveling (actuals vs budget) — last by design
 
 **Type:** New feature · **Effort:** High · **Complexity risk:** highest in this list

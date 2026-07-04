@@ -24,14 +24,34 @@ built and configured; for deploying it to the cluster see
 
 ## nginx config
 
-`nginx.conf` (copied to `/etc/nginx/conf.d/default.conf`) serves the SPA:
+`nginx.conf` (copied to `/etc/nginx/conf.d/default.conf`, so it sits inside the
+`http` block and can carry http-level directives) follows the same hardened
+pattern as the sibling static sites (website, timeline):
 
 - Listens on **8080** (IPv4 + IPv6); an unprivileged user can't bind 80.
-- `location = /healthz` → `200 'ok'` — used by the k8s probes and the Taskfile healthcheck.
+- **Default server** (`server_name _`): any request whose Host doesn't match
+  `rejs.lillevang.dev` gets `444` (connection dropped, no response). Only
+  `location = /healthz` → `200 'ok'` lives there too, because k8s probes and
+  the Taskfile healthcheck reach the container by pod IP / localhost. This
+  means local smoke tests against `localhost` only get `/healthz` — use a
+  `Host: rejs.lillevang.dev` header to exercise the app vhost.
+- **Real client IP** recovered from `X-Forwarded-For` (`set_real_ip_from` the
+  Cilium gateway pod network and the Hetzner LB). ⚠️ Those two values are
+  **copied from the infra repo** (cluster pod CIDR, LB IP); if either changes
+  there, update `nginx.conf` too. Drift is silent: real_ip stops resolving, all
+  visitors share the gateway's rate-limit bucket, and the site throws
+  widespread `429`s with nothing in the nginx error log.
+- **Per-IP rate limit**: 10 r/s sustained, burst 30, `429` on excess — applied
+  to the app locations (`/`, `/index.html`, unknown paths), not `/healthz` or
+  hashed assets.
 - `location /assets/` → long-lived immutable caching (Vite emits hashed filenames).
-- `index.html` is served `no-cache` so new deploys are picked up immediately.
-- SPA fallback: unknown paths `try_files … /index.html` (client-side routing).
-- The SPA locations `include /etc/nginx/conf.d/security-headers.inc`.
+- `index.html` (and `/`, which serves it) is `no-cache` so new deploys are
+  picked up immediately.
+- **No SPA fallback**: the app is a single page at `/`; shared plans travel in
+  the URL fragment and never reach the server (see
+  [share-links.md](../share-links.md)). Unknown paths return a real **404**,
+  and directory URIs aren't resolved (no `403` hinting that `/assets/` exists).
+- The app locations `include /etc/nginx/conf.d/security-headers.inc`.
 
 ## Security headers (`security-headers.inc`)
 
@@ -70,4 +90,6 @@ CSP `connect-src` host in `security-headers.inc`. A `Taskfile.yaml` (`task build
 | `VITE_SHORTENER_URL` | build arg              | Enables short links; must match the CSP `connect-src` host. |
 | CSP `connect-src`    | `security-headers.inc` | Must list the geocoder and shortener origins.               |
 | Listen port          | `nginx.conf`           | 8080 (non-root).                                            |
-| Health               | `nginx.conf`           | `GET /healthz` → `ok`.                                      |
+| Health               | `nginx.conf`           | `GET /healthz` → `ok` (any Host).                           |
+| Vhost                | `nginx.conf`           | `rejs.lillevang.dev`; other Hosts get `444`.                |
+| Rate limit           | `nginx.conf`           | 10 r/s per client IP, burst 30, `429` on excess.            |
