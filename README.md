@@ -182,10 +182,14 @@ project documentation lives in [`docs/`](./docs/README.md).
 The app builds to a static `dist/` and is served by nginx. A `Dockerfile`
 (multi-stage build → `nginx-unprivileged` on port 8080, with a `/healthz`
 endpoint) and a `Taskfile.yaml` (`task build` / `task verify` / `task release`)
-package and publish the container image to GHCR. A GitHub Actions workflow
-(`.github/workflows/`) builds and pushes the image on each push to `main`.
+package and publish the container image to GHCR. Releases are cut **locally**:
+`task release` builds, pushes, signs the image digest with cosign (key injected
+from 1Password), verifies the signature, scans it, and commits the artifacts.
+There is no CI image build — the cluster requires signed images and the signing
+key never leaves 1Password.
 
-See `docs/deploy/infra-onboarding.md` for the GitOps onboarding runbook.
+See `docs/deploy/container.md` for the release/signing details and
+`docs/deploy/infra-onboarding.md` for the GitOps onboarding runbook.
 
 ---
 

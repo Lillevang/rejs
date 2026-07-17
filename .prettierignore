@@ -10,6 +10,12 @@ README.agent.md
 pnpm-lock.yaml
 package-lock.json
 
+# Trivy-generated release artifacts (SBOM + vuln reports, written by `task
+# trivy`). Prettier reflows them, so every check.sh run dirties the last
+# release's committed reports — and the next release rewrites them unformatted
+# again. They are machine output; leave them exactly as Trivy emits them.
+security
+
 # nginx include: Prettier infers an `.inc` file as HTML and reflows it, which
 # collapses the line-based `#` comments and directives into invalid config
 # (nginx then fails to start). Keep it hand-formatted.
