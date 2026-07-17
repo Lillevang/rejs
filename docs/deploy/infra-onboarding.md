@@ -38,9 +38,10 @@ in [`github.com/lillevang/infra`](https://github.com/lillevang/infra).
 
 ## 1. Prerequisites
 
-- [ ] **Image published to GHCR and pullable.** `.github/workflows/container.yaml` in the rejs repo
-      builds + pushes `ghcr.io/lillevang/rejs` on push to `main` and on `v*` tags. Confirm the tag you
-      intend to deploy actually exists:
+- [ ] **Image published to GHCR, signed, and pullable.** `task release` in the rejs repo builds, pushes,
+      and cosign-signs `ghcr.io/lillevang/rejs` locally (see `docs/deploy/container.md`); there is no CI
+      image build. The cluster's Kyverno `verify-image-signatures` policy expects the signature. Confirm the
+      tag you intend to deploy actually exists:
       `bash
 crane ls ghcr.io/lillevang/rejs        # or: docker buildx imagetools inspect ghcr.io/lillevang/rejs:<tag>
 `

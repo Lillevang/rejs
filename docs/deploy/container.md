@@ -76,12 +76,33 @@ the file (one directive per line).
 
 ## Publish
 
-A GitHub Actions workflow (`.github/workflows/container.yaml`) builds and pushes
-`ghcr.io/lillevang/rejs` on push to `main` and on `v*` tags (multi-arch). It
-passes `VITE_SHORTENER_URL=https://s.lvang.dev` as a build arg, so the published
-image has the shortener integration **enabled**; keep that value in sync with the
-CSP `connect-src` host in `security-headers.inc`. A `Taskfile.yaml` (`task build`
-/ `task verify` / `task release`) packages and publishes locally.
+Releases are cut **locally** with `task release` — there is no CI image build.
+The cluster's Kyverno `verify-image-signatures` policy requires every
+`ghcr.io/lillevang/*` image to carry a cosign signature, and the signing key
+lives only in 1Password (no CI secrets), so the Taskfile is the only path that
+publishes a signed image. See infra `docs/kyverno.md` (Phase 3).
+
+`task release` runs: build → healthcheck → push → **sign** → verify-signature →
+Trivy SBOM/vuln scan → commit artifacts. Then bump the tag in the infra repo
+(`apps/rejs/deploy.yaml`) to deploy via ArgoCD.
+
+The build passes `VITE_SHORTENER_URL=https://s.lvang.dev` as a build arg, so the
+published image has the shortener integration **enabled**; keep that value in
+sync with the CSP `connect-src` host in `security-headers.inc`.
+
+### Signing prerequisites
+
+- **1Password session live** — `op read` needs one; a stale session makes cosign
+  fail with a misleading `invalid pem block`.
+- **Logged in to GHCR with podman** —
+  `gh auth token | podman login ghcr.io -u Lillevang --password-stdin`.
+  The `sign`/`verify-signature` tasks copy podman's `containers/auth.json` into a
+  throwaway `DOCKER_CONFIG` for cosign, which only reads docker-style config.
+
+The three cosign flags in the `sign` task
+(`--new-bundle-format=false --use-signing-config=false --tlog-upload=false`) are
+**load-bearing**: cosign v3 defaults to the sigstore bundle format, which Kyverno
+1.18 cannot verify key-based. Don't drop them without re-testing verification.
 
 ## Config summary
 
