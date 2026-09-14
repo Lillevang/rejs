@@ -39,3 +39,6 @@ coverage/
 .nyc_output/
 playwright-report/
 test-results/
+
+# Renovate dry-run log (task deps:check)
+.renovate-check.jsonl
