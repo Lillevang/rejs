@@ -40,7 +40,6 @@ export function useGeocoder(names: string[]): GeocoderState {
   useEffect(() => {
     let cancelled = false;
     for (const key of keys) {
-      setLocations((prev) => (key in prev ? prev : { ...prev, [key]: "loading" }));
       geocoder
         .geocodeCandidates(key)
         .then((list) => {
@@ -62,7 +61,16 @@ export function useGeocoder(names: string[]): GeocoderState {
     };
   }, [keys, geocoder]);
 
-  return { locations, candidates };
+  // A key that is requested but not yet resolved is "loading". Deriving that
+  // here (rather than writing a placeholder from the effect) keeps the effect
+  // free of synchronous setState calls, which React 19's hooks lint forbids.
+  const withPending = useMemo(() => {
+    const out: Record<string, LocationStatus> = { ...locations };
+    for (const key of keys) if (!(key in out)) out[key] = "loading";
+    return out;
+  }, [keys, locations]);
+
+  return { locations: withPending, candidates };
 }
 
 export { keyOf as geocodeKey };

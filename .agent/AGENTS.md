@@ -32,7 +32,7 @@ there is no separate model and no server. Place names are resolved to coordinate
 via the public Nominatim geocoding API (deduped and cached client-side); plans
 persist in `localStorage` (one autosaved "current" buffer plus named save slots).
 
-**Stack:** React 18 + TypeScript, bundled by Vite 5. **No backend** — everything
+**Stack:** React 19 + TypeScript, bundled by Vite 6. **No backend** — everything
 runs in the browser. Unit tests use Vitest (+ Testing Library, jsdom); end-to-end
 tests use Playwright.
 
