@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
 
 # --- Build stage -------------------------------------------------------------
-# Pinned Node 22 LTS (Active LTS) on Alpine for a small, reproducible builder.
-FROM node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS builder
+# Pinned Node 24 LTS (Active LTS) on Alpine for a small, reproducible builder.
+FROM node:24.21.0-alpine@sha256:be80f76cf40ec8e42b9bec49f60a55e0660f30af58d3e5a25530785b30ea67e2 AS builder
 
 # SITE_VERSION is accepted for parity with the release tooling (Taskfile / CI).
 # The Vite build does not currently consume it, but it is exported as an env var

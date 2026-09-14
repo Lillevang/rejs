@@ -8,9 +8,9 @@ built and configured; for deploying it to the cluster see
 
 `Dockerfile` is a two-stage build:
 
-1. **Builder** (`node:22-alpine`) — `npm ci` against the committed lockfile, then
+1. **Builder** (`node:24-alpine`) — `npm ci` against the committed lockfile, then
    `npm run build` (`tsc -b && vite build`) → `/app/dist`.
-2. **Runtime** (`nginxinc/nginx-unprivileged:1.27-alpine`) — copies `dist/` to
+2. **Runtime** (`nginxinc/nginx-unprivileged:1.31-alpine`) — copies `dist/` to
    `/usr/share/nginx/html` and the nginx config in. No Node runtime, no secrets;
    fully static and stateless. Runs as the unprivileged `nginx` user (UID 101),
    listens on **8080**.
