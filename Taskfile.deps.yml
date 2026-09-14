@@ -19,7 +19,7 @@
 # branches. Needs: gh (logged in), jq, podman or docker. Both check and pr fetch
 # the preset from infra's main, so a preset change must be pushed first.
 
-version: '3'
+version: "3"
 
 set: [errexit, nounset, pipefail]
 
@@ -33,12 +33,11 @@ vars:
   # Must equal gitAuthor in infra apps/renovate/global.json. Renovate refuses to
   # rebase a branch whose last commit is by an unknown author, so every runner
   # (cluster CronJob, infra `just deps-pr`, this file) must commit as the same one.
-  GIT_AUTHOR: 'Renovate (local) <jeppe.lillevang@gmail.com>'
+  GIT_AUTHOR: "Renovate (local) <jeppe.lillevang@gmail.com>"
   LABEL: '{{.LABEL | default "dependencies"}}'
   NO_PR: '{{.NO_PR | default ""}}'
 
 tasks:
-
   check:
     silent: true
     desc: Dry run - table of outdated dependencies for this repo (touches nothing)
