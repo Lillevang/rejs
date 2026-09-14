@@ -4,7 +4,7 @@ rejs is a single-page app with **no backend**: the DSL text a user types is the
 single source of truth, and everything — parsing, resolving, geocoding,
 rendering, persistence — happens in the browser.
 
-**Stack:** React 18 + TypeScript, bundled by Vite 5. Unit tests: Vitest (+
+**Stack:** React 19 + TypeScript, bundled by Vite 6. Unit tests: Vitest (+
 Testing Library, jsdom). End-to-end: Playwright.
 
 ## The pipeline

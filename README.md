@@ -140,7 +140,7 @@ Nothing leaves your browser except geocoding lookups to Nominatim.
 
 ## Architecture
 
-React 18 + TypeScript, bundled by Vite 5. No backend — everything runs in the
+React 19 + TypeScript, bundled by Vite 6. No backend — everything runs in the
 browser. Unit tests use Vitest (+ Testing Library, jsdom); end-to-end tests use
 Playwright.
 

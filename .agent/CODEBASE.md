@@ -137,7 +137,7 @@ src/components/MapView.tsx:122:export function MapView({
 src/components/OrientationHint.tsx:15:export function OrientationHint({ show }: OrientationHintProps) {
 src/components/Summary.tsx:8:export function Summary({ trip }: SummaryProps) {
 src/components/Timeline.tsx:36:export function Timeline({ hops, activeHopId, onHover, onAddHop }: TimelineProps) {
-src/components/Toolbar.tsx:56:export function Toolbar({
+src/components/Toolbar.tsx:60:export function Toolbar({
 src/dsl/edit.ts:15:export function formatCoords(lat: number, lng: number): string {
 src/dsl/edit.ts:37:export function setHopCoords(text: string, headerLine: number, lat: number, lng: number): string {
 src/dsl/edit.ts:73:export const NEW_HOP_NAME = "New stop";

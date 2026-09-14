@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 /** Close a popup when it's open and the user clicks outside it or presses Escape. */
-function useDismissable(ref: RefObject<HTMLElement>, open: boolean, close: () => void) {
+function useDismissable(ref: RefObject<HTMLElement | null>, open: boolean, close: () => void) {
   useEffect(() => {
     if (!open) return;
     function onPointerDown(e: MouseEvent) {
