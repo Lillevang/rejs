@@ -2,7 +2,7 @@
 
 # --- Build stage -------------------------------------------------------------
 # Pinned Node 24 LTS (Active LTS) on Alpine for a small, reproducible builder.
-FROM node:24.21.0-alpine@sha256:be80f76cf40ec8e42b9bec49f60a55e0660f30af58d3e5a25530785b30ea67e2 AS builder
+FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS builder
 
 # SITE_VERSION is accepted for parity with the release tooling (Taskfile / CI).
 # The Vite build does not currently consume it, but it is exported as an env var
@@ -29,7 +29,7 @@ RUN npm run build
 # --- Runtime stage -----------------------------------------------------------
 # Minimal, unprivileged nginx that serves the static bundle. No Node runtime,
 # no app secrets, fully static and stateless.
-FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:19c132c9ab02d3b783f478743dafc7a7f42e27aa7d2bdcbec1bb1128ca8f2a07
+FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:e75f89810bf5bfbcf58a1cfb32a1a11de55b7623d732e67735d513b720d7436a
 
 # nginx-unprivileged already runs as UID 101 (nginx) and listens unprivileged,
 # so no manual user creation or pid/cache chown juggling is required.
