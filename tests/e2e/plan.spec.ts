@@ -1,5 +1,15 @@
 import { expect, test, type Locator } from "@playwright/test";
 
+// Keep the suite offline: the example plan loaded on every `goto("/")` would
+// otherwise fire live Nominatim lookups (throttled/blocked from CI runners).
+// An empty result set resolves every name as "not found", which no test
+// depends on — specs that need pins use explicit `coords:` or seed the cache.
+test.beforeEach(async ({ page }) => {
+  await page.route("https://nominatim.openstreetmap.org/**", (route) =>
+    route.fulfill({ json: [] }),
+  );
+});
+
 /** Resolve once a locator's bounding box stops changing (e.g. a map animation). */
 async function waitForStablePosition(locator: Locator): Promise<void> {
   let last = "";
@@ -176,8 +186,10 @@ test("dragging a hop pin writes coords back into the DSL", async ({ page }) => {
 test("picking a disambiguation candidate writes that hop's coords", async ({ page }) => {
   // Seed the geocode cache so "Venice" resolves to two far-apart, similarly
   // important matches — the app should offer a chooser instead of auto-picking.
-  await page.goto("/");
-  await page.evaluate(() => {
+  // Seeding from an init script (before any app code runs) matters: the app
+  // persists its whole in-memory cache on every lookup, so a value written into
+  // localStorage after load can be clobbered by a lookup that is still queued.
+  await page.addInitScript(() => {
     const cache = {
       venice: {
         found: true,
@@ -189,7 +201,7 @@ test("picking a disambiguation candidate writes that hop's coords", async ({ pag
     };
     localStorage.setItem("rejs.geocode.v2", JSON.stringify(cache));
   });
-  await page.reload();
+  await page.goto("/");
 
   const editor = page.getByLabel("Journey DSL");
   await editor.fill("hop Venice:\n  stay: 2d\n");

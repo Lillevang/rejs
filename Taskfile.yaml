@@ -27,6 +27,7 @@ tasks:
       TARGET: '{{.TARGET | default "patch"}}'
     cmds:
       - |
+        set -euo pipefail
         CURRENT=$(cat {{.TAG_FILE}})
         IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
         case "{{.TARGET}}" in
@@ -36,6 +37,10 @@ tasks:
          *) echo "Unknown bump target: {{.TARGET}}" && exit 1;;
         esac
         NEW="$MAJOR.$MINOR.$PATCH"
+        # Keep package.json (and the lockfile's root entry) in step with .version,
+        # which stays the source of truth. Sync package.json first so a failure
+        # here aborts before .version moves and the two can't drift.
+        npm version "$NEW" --no-git-tag-version --allow-same-version
         echo "$NEW" > {{.TAG_FILE}}
         echo "🔼 Bumped version: $CURRENT → $NEW"
 
@@ -165,7 +170,7 @@ tasks:
     cmds:
       - |
         echo "📦 Committing version + security artifacts"
-        git add .version .digest security/sbom-{{.TAG}}.json security/vulns-{{.TAG}}.json
+        git add .version .digest package.json package-lock.json security/sbom-{{.TAG}}.json security/vulns-{{.TAG}}.json
         git commit -m "chore: release {{.TAG}}"
         git push
 

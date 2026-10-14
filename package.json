@@ -1,10 +1,29 @@
 {
   "name": "rejs",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "description": "Plan, visualize, and compare longer journeys from a small DSL.",
   "license": "MIT",
+  "homepage": "https://rejs.lillevang.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lillevang/rejs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Lillevang/rejs/issues"
+  },
+  "keywords": [
+    "journey-planner",
+    "travel",
+    "itinerary",
+    "dsl",
+    "map",
+    "leaflet",
+    "react",
+    "vite",
+    "local-first"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

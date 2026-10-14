@@ -15,6 +15,12 @@ built and configured; for deploying it to the cluster see
    fully static and stateless. Runs as the unprivileged `nginx` user (UID 101),
    listens on **8080**.
 
+Files in `public/` (`favicon.svg`, `apple-touch-icon.png`, and `og.jpg`, the
+link-preview image referenced from `index.html`'s Open Graph tags) are copied
+verbatim to the `dist/` root by Vite. nginx serves them from the catch-all
+`location /` (security headers, default caching — they are not hashed, so
+replacing one is picked up on the next deploy).
+
 ### Build args
 
 | Arg                  | Purpose                                                                                                                                                                                                                      |
@@ -82,9 +88,12 @@ The cluster's Kyverno `verify-image-signatures` policy requires every
 lives only in 1Password (no CI secrets), so the Taskfile is the only path that
 publishes a signed image. See infra `docs/kyverno.md` (Phase 3).
 
-`task release` runs: build → healthcheck → push → **sign** → verify-signature →
-Trivy SBOM/vuln scan → commit artifacts. Then bump the tag in the infra repo
-(`apps/rejs/deploy.yaml`) to deploy via ArgoCD.
+`task bump` (patch/minor/major) advances `.version` — the source of truth for
+the image tag — and mirrors it into `package.json` so the two never drift.
+`task release` then runs: build → healthcheck → push → **sign** →
+verify-signature → Trivy SBOM/vuln scan → commit artifacts (`.version`,
+`.digest`, `package.json`/lockfile, SBOM, vuln report). Then bump the tag in
+the infra repo (`apps/rejs/deploy.yaml`) to deploy via ArgoCD.
 
 The build passes `VITE_SHORTENER_URL=https://s.lvang.dev` as a build arg, so the
 published image has the shortener integration **enabled**; keep that value in

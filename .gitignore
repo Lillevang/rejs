@@ -24,6 +24,7 @@
 # Common build outputs
 node_modules/
 dist/
+*.tsbuildinfo
 build/
 target/
 __pycache__/
@@ -42,3 +43,6 @@ test-results/
 
 # Renovate dry-run log (task deps:check)
 .renovate-check.jsonl
+
+# Claude Code per-user permissions (personal, not shared)
+.claude/settings.local.json

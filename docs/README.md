@@ -27,6 +27,10 @@ duplicate them here:
   (auto-generated tree + hand-written "why").
 - **Open/'shipped' feature ideas** — [`IDEAS.md`](../IDEAS.md) /
   [`IMPLEMENTED.md`](../IMPLEMENTED.md).
+- **Screenshots** used by the root README live in [`assets/`](./assets/)
+  (desktop and phone captures of the example trip, as WebP). The link-preview
+  image for the deployed site is `public/og.jpg` — see
+  [`deploy/container.md`](./deploy/container.md).
 
 ## Keeping docs current
 

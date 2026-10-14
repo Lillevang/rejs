@@ -1,6 +1,20 @@
-# rejs
+<h1 align="center">rejs</h1>
 
-**Plan, visualize, and compare longer journeys from a small text DSL — entirely in your browser.**
+<p align="center">
+  <strong>Plan, visualize, and compare longer journeys from a small text DSL — entirely in your browser.</strong>
+</p>
+
+<p align="center">
+  <a href="https://rejs.lillevang.dev"><img alt="Live: rejs.lillevang.dev" src="https://img.shields.io/badge/live-rejs.lillevang.dev-2563eb"></a>
+  <a href="https://github.com/Lillevang/rejs/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Lillevang/rejs/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green.svg"></a>
+</p>
+
+<p align="center">
+  <a href="https://rejs.lillevang.dev">
+    <img src="docs/assets/rejs-desktop.webp" alt="rejs showing the example Interrail trip: the DSL editor on the left, and the summary, map, and timeline on the right" width="100%">
+  </a>
+</p>
 
 rejs is a backend-free journey planner. You write a plain-text description of a
 trip — hops, stays, activities, budgets, transport legs — into an editor, and on
@@ -14,22 +28,25 @@ every keystroke the app parses it and re-renders three synced views:
 The DSL text is the single source of truth — there is no separate model and no
 server. Place names are resolved to coordinates via the public
 [Nominatim](https://nominatim.openstreetmap.org/) geocoding API (deduped and
-cached client-side), and plans persist in `localStorage`.
+cached client-side), and plans persist in `localStorage`. Nothing leaves your
+browser except geocoding lookups.
 
 ---
 
-## Quick start
+## Try it
 
-Requires Node.js 20+ and npm.
+**[rejs.lillevang.dev](https://rejs.lillevang.dev)** opens with an example
+Interrail trip loaded. Edit the text on the left and watch the map and timeline
+follow; press **DSL guide** in the toolbar for the full syntax.
+
+To run it locally (Node.js 20+ and npm):
 
 ```bash
 npm install        # install dependencies
 npm run dev        # start Vite on http://localhost:5173
 ```
 
-Open the dev URL and start editing the example trip — the views update live.
-
-### Other scripts
+### Scripts
 
 | Command             | What it does                               |
 | ------------------- | ------------------------------------------ |
@@ -130,11 +147,16 @@ drift out of sync with the parser.
   the long self-contained link. See [`docs/share-links.md`](./docs/share-links.md).
 - **Export** — print / save as PDF (clean print stylesheet), or download a
   calendar `.ics` (one all-day event per hop, fixed-date activities as events).
+- **Phone layout** — below 640px the three views become full-bleed **Map /
+  Plan / Edit** tabs, with the map as the default so the plan is useful on the
+  road.
 - **First-run hint** — a one-line, dismissible nudge above the editor on a
   genuine first visit explains the text-as-UI model and points to the DSL guide;
   it never shows again once dismissed (or for returning users with saved plans).
 
-Nothing leaves your browser except geocoding lookups to Nominatim.
+<p align="center">
+  <img src="docs/assets/rejs-mobile.webp" alt="rejs on a phone: the map tab showing the example trip, with Map / Plan / Edit tabs along the bottom" width="260">
+</p>
 
 ---
 
@@ -150,12 +172,15 @@ src/
                 resolved plan + diagnostics), edit.ts (programmatic DSL edits),
                 types.ts. This is the core; start here.
   geocode/      nominatim.ts place-name → coordinates lookup (+ ambiguity.ts).
-  state/        store.ts (localStorage persistence), use-geocoder.ts, hooks.
+  state/        store.ts (localStorage persistence), use-geocoder.ts, and the
+                layout hooks (use-media-query.ts, use-resizable-height.ts).
   components/   Editor.tsx, MapView.tsx, Timeline.tsx, Summary.tsx,
-                Diagnostics.tsx, Toolbar.tsx, HelpModal.tsx, FirstRunHint.tsx.
+                Diagnostics.tsx, Toolbar.tsx, HelpModal.tsx, FirstRunHint.tsx,
+                OrientationHint.tsx.
   lib/          pure helpers — dates, colors, formatting, duration, share
-                links, the DSL reference, and the seed example plan.
-  App.tsx       composition root.
+                links, the DSL reference, export/ (.ics, downloads), and the
+                seed example plan.
+  App.tsx       composition root (desktop split vs. phone tabs).
 ```
 
 The data flow is one-directional: **DSL text → `parse` → `resolve` → render**.
@@ -169,11 +194,20 @@ project documentation lives in [`docs/`](./docs/README.md).
 
 ---
 
-## Testing
+## Development
 
-- Unit tests live next to the code they cover (`foo.ts` + `foo.test.ts`).
-- End-to-end specs live in `tests/e2e/`.
-- Run `npm test` for units and `npm run e2e` for Playwright.
+- Unit tests live next to the code they cover (`foo.ts` + `foo.test.ts`);
+  end-to-end specs live in `tests/e2e/`. Run `npm test` and `npm run e2e`.
+- The full local gate — format, lint, type-check, unit and e2e tests — is
+  `./.agent/scripts/check.sh` (or `just check`). CI runs the same checks
+  (with Prettier in `--check` mode) on every push and pull request.
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
+  (`feat:`, `fix:`, `docs:`, …), one logical change per commit.
+- The repo is set up for agent-assisted development: the working agreement
+  lives in [`AGENTS.md`](./AGENTS.md), with a generated file map in
+  [`.agent/CODEBASE.md`](./.agent/CODEBASE.md). Open ideas are tracked in
+  [`IDEAS.md`](./IDEAS.md); shipped ones are archived in
+  [`IMPLEMENTED.md`](./IMPLEMENTED.md).
 
 ---
 
@@ -188,8 +222,10 @@ from 1Password), verifies the signature, scans it, and commits the artifacts.
 There is no CI image build — the cluster requires signed images and the signing
 key never leaves 1Password.
 
-See `docs/deploy/container.md` for the release/signing details and
-`docs/deploy/infra-onboarding.md` for the GitOps onboarding runbook.
+See [`docs/deploy/container.md`](./docs/deploy/container.md) for the
+release/signing details and
+[`docs/deploy/infra-onboarding.md`](./docs/deploy/infra-onboarding.md) for the
+GitOps onboarding runbook.
 
 ---
 

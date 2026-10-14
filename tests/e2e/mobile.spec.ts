@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
 
+// Keep the suite offline: the example plan loaded on every `goto("/")` would
+// otherwise fire live Nominatim lookups (throttled/blocked from CI runners).
+// An empty result set resolves every name as "not found", which no test
+// depends on — specs that need pins use explicit `coords:` or seed the cache.
+test.beforeEach(async ({ page }) => {
+  await page.route("https://nominatim.openstreetmap.org/**", (route) =>
+    route.fulfill({ json: [] }),
+  );
+});
+
 // Drive the phone layout by forcing a narrow viewport (below the 640px swap) with
 // a coarse pointer. The same DSL drives the same three views — they just become
 // full-bleed tabs instead of a side-by-side split.
