@@ -1,8 +1,8 @@
-# syntax=docker/dockerfile:1@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+# syntax=docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
 
 # --- Build stage -------------------------------------------------------------
 # Pinned Node 24 LTS (Active LTS) on Alpine for a small, reproducible builder.
-FROM node:24.21.0-alpine@sha256:be80f76cf40ec8e42b9bec49f60a55e0660f30af58d3e5a25530785b30ea67e2 AS builder
+FROM node:24.22.0-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS builder
 
 # SITE_VERSION is accepted for parity with the release tooling (Taskfile / CI).
 # The Vite build does not currently consume it, but it is exported as an env var
@@ -29,7 +29,7 @@ RUN npm run build
 # --- Runtime stage -----------------------------------------------------------
 # Minimal, unprivileged nginx that serves the static bundle. No Node runtime,
 # no app secrets, fully static and stateless.
-FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:19c132c9ab02d3b783f478743dafc7a7f42e27aa7d2bdcbec1bb1128ca8f2a07
+FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:378d0c32f6562f7fd9629170797f57d2b953aa09be983b3daaf4809bb039ca00
 
 # nginx-unprivileged already runs as UID 101 (nginx) and listens unprivileged,
 # so no manual user creation or pid/cache chown juggling is required.
