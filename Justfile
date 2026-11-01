@@ -37,7 +37,7 @@ fmt:
         echo "no package.json, skipping formatter"
         exit 0
     fi
-    if npm run | grep -qE '^  format($|:)'; then
+    if [[ "$(npm pkg get scripts.format)" != "{}" ]]; then
         npm run format
     else
         npx prettier --write .
@@ -51,7 +51,7 @@ lint:
         echo "no package.json, skipping lint"
         exit 0
     fi
-    if npm run | grep -qE '^  lint($|:)'; then
+    if [[ "$(npm pkg get scripts.lint)" != "{}" ]]; then
         npm run lint
     else
         echo "no npm lint script, skipping"
@@ -65,7 +65,7 @@ typecheck:
         echo "no package.json, skipping typecheck"
         exit 0
     fi
-    if npm run | grep -qE '^  typecheck($|:)'; then
+    if [[ "$(npm pkg get scripts.typecheck)" != "{}" ]]; then
         npm run typecheck
     elif [[ -f tsconfig.json ]]; then
         npx tsc --noEmit
@@ -81,7 +81,7 @@ test:
         echo "no package.json, skipping tests"
         exit 0
     fi
-    if npm run | grep -qE '^  test($|:)'; then
+    if [[ "$(npm pkg get scripts.test)" != "{}" ]]; then
         npm test
     else
         echo "no npm test script, skipping"
