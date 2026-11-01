@@ -1,6 +1,6 @@
 {
   "name": "rejs",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "type": "module",
   "description": "Plan, visualize, and compare longer journeys from a small DSL.",
