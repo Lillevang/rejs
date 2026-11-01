@@ -6,7 +6,6 @@
 
 <p align="center">
   <a href="https://rejs.lillevang.dev"><img alt="Live: rejs.lillevang.dev" src="https://img.shields.io/badge/live-rejs.lillevang.dev-2563eb"></a>
-  <a href="https://github.com/Lillevang/rejs/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Lillevang/rejs/actions/workflows/ci.yml/badge.svg"></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green.svg"></a>
 </p>
 
@@ -199,8 +198,9 @@ project documentation lives in [`docs/`](./docs/README.md).
 - Unit tests live next to the code they cover (`foo.ts` + `foo.test.ts`);
   end-to-end specs live in `tests/e2e/`. Run `npm test` and `npm run e2e`.
 - The full local gate — format, lint, type-check, unit and e2e tests — is
-  `./.agent/scripts/check.sh` (or `just check`). CI runs the same checks
-  (with Prettier in `--check` mode) on every push and pull request.
+  `./.agent/scripts/check.sh` (or `just check`). There is no hosted CI on
+  purpose: the same gate runs on the release machine (`task release` runs it
+  first), matching the other app repos.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `docs:`, …), one logical change per commit.
 - The repo is set up for agent-assisted development: the working agreement
