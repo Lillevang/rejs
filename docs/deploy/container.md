@@ -103,10 +103,12 @@ sync with the CSP `connect-src` host in `security-headers.inc`.
 
 - **1Password session live** — `op read` needs one; a stale session makes cosign
   fail with a misleading `invalid pem block`.
-- **Logged in to GHCR with podman** —
-  `gh auth token | podman login ghcr.io -u Lillevang --password-stdin`.
-  The `sign`/`verify-signature` tasks copy podman's `containers/auth.json` into a
-  throwaway `DOCKER_CONFIG` for cosign, which only reads docker-style config.
+- **Logged in to GHCR** — either
+  `gh auth token | podman login ghcr.io -u Lillevang --password-stdin` or an
+  existing `~/.docker/config.json` login. The Taskfile's `DOCKER_CONFIG` env
+  points cosign and trivy at podman's `containers/auth.json` when one exists and
+  falls back to `~/.docker/config.json` otherwise, the same lookup podman and
+  skopeo do, so `sign`/`verify-signature` use whichever login pushed the image.
 
 The three cosign flags in the `sign` task
 (`--new-bundle-format=false --use-signing-config=false --tlog-upload=false`) are
