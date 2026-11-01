@@ -1,4 +1,10 @@
 # https://taskfile.dev
+#
+# Release flow for rejs. Everything runs locally: the quality gate (`task check`,
+# the same done-gate as `just check`) and the cosign signing, whose key lives
+# only in 1Password. This repo has no .github/workflows on purpose: there is no
+# hosted CI and no CI image push, so every published image goes through the
+# gate and the signing path below on the release machine.
 
 version: "3"
 
@@ -21,6 +27,11 @@ vars:
   OP_ITEM: '{{.OP_ITEM | default "op://Personal/cosign"}}'
 
 tasks:
+  check:
+    desc: Local quality gate (codemap, format, lint, types, unit, Playwright) - same as `just check`
+    cmds:
+      - ./.agent/scripts/check.sh
+
   bump:
     desc: Bump version (patch, minor, major)
     vars:
@@ -175,8 +186,9 @@ tasks:
         git push
 
   release:
-    desc: Full release pipeline (build, push, sign, verify, scan, commit)
+    desc: Full release pipeline (check, build, push, sign, verify, scan, commit)
     cmds:
+      - task: check
       - task: verify
       - task: push
       - task: sign
